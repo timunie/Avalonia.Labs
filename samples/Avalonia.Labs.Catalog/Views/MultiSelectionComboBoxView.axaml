@@ -38,6 +38,20 @@
           </ComboBox>
         </StackPanel>
 
+        <CheckBox Content="InterceptKeyboardSelection" IsChecked="{Binding InterceptKeyboardSelection}"/>
+        <CheckBox Content="InterceptMouseWheelSelection" IsChecked="{Binding InterceptMouseWheelSelection}"/>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="OrderSelectedItemsBy"/>
+          <ComboBox ItemsSource="{Binding OrderTypes}" SelectedItem="{Binding OrderSelectedItemsBy}"/>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="SelectItemsFromTextInputDelay  (-1 = disabled)"/>
+          <NumericUpDown Value="{Binding SelectItemsFromTextInputDelay}"
+                         Minimum="-1" Maximum="5000" Increment="100" FormatString="0"/>
+        </StackPanel>
+
       </StackPanel>
     </ScrollViewer>
 
@@ -59,6 +73,10 @@
               ShowClearButton="{Binding ShowClearButton}"
               MaxSelectedItems="{Binding MaxSelectedItems}"
               FilterMode="{Binding FilterMode}"
+              OrderSelectedItemsBy="{Binding OrderSelectedItemsBy}"
+              SelectItemsFromTextInputDelay="{Binding SelectItemsFromTextInputDelay}"
+              InterceptKeyboardSelection="{Binding InterceptKeyboardSelection}"
+              InterceptMouseWheelSelection="{Binding InterceptMouseWheelSelection}"
               Separator=", "
               PlaceholderText="Select frameworks…"/>
         </StackPanel>
@@ -76,6 +94,8 @@
               IsReadOnly="{Binding IsReadOnly}"
               ShowClearButton="{Binding ShowClearButton}"
               FilterMode="{Binding FilterMode}"
+              InterceptKeyboardSelection="{Binding InterceptKeyboardSelection}"
+              InterceptMouseWheelSelection="{Binding InterceptMouseWheelSelection}"
               PlaceholderText="Select a framework…"/>
         </StackPanel>
 

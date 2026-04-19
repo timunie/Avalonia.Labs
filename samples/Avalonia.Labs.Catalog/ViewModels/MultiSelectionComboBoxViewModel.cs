@@ -25,9 +25,16 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
         "Xamarin", "Angular", "Vue.js", "Svelte",
     ];
 
-    [ObservableProperty] public partial bool   IsEditable      { get; set; } = false;
-    [ObservableProperty] public partial bool   IsReadOnly      { get; set; } = false;
-    [ObservableProperty] public partial bool   ShowClearButton { get; set; } = true;
-    [ObservableProperty] public partial int    MaxSelectedItems { get; set; } = -1;
-    [ObservableProperty] public partial FilterMode FilterMode  { get; set; } = FilterMode.Contains;
+    public IReadOnlyList<SelectedItemsOrderType> OrderTypes { get; } = System.Enum.GetValues<SelectedItemsOrderType>();
+
+    [ObservableProperty] public partial bool IsEditable       { get; set; } = false;
+    [ObservableProperty] public partial bool IsReadOnly       { get; set; } = false;
+    [ObservableProperty] public partial bool ShowClearButton  { get; set; } = true;
+    [ObservableProperty] public partial int  MaxSelectedItems { get; set; } = -1;
+    [ObservableProperty] public partial FilterMode FilterMode { get; set; } = FilterMode.Contains;
+
+    [ObservableProperty] public partial SelectedItemsOrderType OrderSelectedItemsBy    { get; set; } = SelectedItemsOrderType.SelectedOrder;
+    [ObservableProperty] public partial int  SelectItemsFromTextInputDelay             { get; set; } = -1;
+    [ObservableProperty] public partial bool InterceptKeyboardSelection                { get; set; } = true;
+    [ObservableProperty] public partial bool InterceptMouseWheelSelection              { get; set; } = true;
 }
