@@ -49,6 +49,7 @@ public class MultiSelectionComboBox : ListBox
     private const string s_pcEditable = ":editable";
     private const string s_pcHasSelections = ":has-selections";
     private const string s_pcMultiple = ":multiple";
+    private const string s_pcHasCustomText = ":has-custom-text";
 
     private bool _isUserDefinedTextInputPending;
 
@@ -676,7 +677,12 @@ public class MultiSelectionComboBox : ListBox
             PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
         }
 
+        var prevHasCustomText = HasCustomText;
         UpdateHasCustomText(selectedItemsText);
+        // If the user's typed text was just matched to selections, select the result so
+        // the user can immediately replace or confirm it without repositioning the cursor.
+        if (prevHasCustomText && !HasCustomText)
+            PART_EditableTextBox.SelectAll();
         _isTextChanging = false;
     }
 
@@ -774,7 +780,10 @@ public class MultiSelectionComboBox : ListBox
         // if the parameter was null lets get the text on our own.
         selectedItemsText ??= GetSelectedItemsText();
 
-        if (string.IsNullOrEmpty(selectedItemsText) && string.IsNullOrEmpty(Text))
+        // Null or empty Text is never "custom" — it is the cleared/initial state.
+        // Without this guard, Text=null vs selectedItemsText="a, b" would wrongly set
+        // HasCustomText=true on first load, keeping the chips hidden forever.
+        if (string.IsNullOrEmpty(Text))
         {
             HasCustomText = false;
             return;
@@ -995,9 +1004,10 @@ public class MultiSelectionComboBox : ListBox
             // We do a text reset if all items were successfully found and we don't have to wait for more input.
             if (_shouldDoTextReset)
             {
-                var oldCaretPos = PART_EditableTextBox.CaretIndex;
-                ResetEditableText();
-                PART_EditableTextBox.CaretIndex = oldCaretPos;
+                // Force-reset the text (bypasses the IsKeyboardFocusWithin early-return
+                // inside UpdateEditableText) and select all so the user can see the match.
+                ResetEditableText(true);
+                PART_EditableTextBox.SelectAll();
             }
 
             // If we have the KeyboardFocus we need to update the text later in order to not interrupt the user.
@@ -1142,7 +1152,9 @@ public class MultiSelectionComboBox : ListBox
         }
         
         UpdateHasCustomText(null);
+        PseudoClasses.Set(s_pcEditable, IsEditable);
         PseudoClasses.Set(s_pcMultiple, SelectionMode.HasFlag(SelectionMode.Multiple));
+        PseudoClasses.Set(s_pcHasCustomText, HasCustomText);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -1330,6 +1342,9 @@ public class MultiSelectionComboBox : ListBox
 
         if (e.Property == SelectionModeProperty)
             PseudoClasses.Set(s_pcMultiple, SelectionMode.HasFlag(SelectionMode.Multiple));
+
+        if (e.Property == HasCustomTextProperty)
+            PseudoClasses.Set(s_pcHasCustomText, HasCustomText);
 
         // Invalidate the binding evaluator cache whenever the binding itself changes so the
         // next call to GetOrCreateBindingEvaluator() picks up the new binding.

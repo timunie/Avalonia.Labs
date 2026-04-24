@@ -6,7 +6,6 @@
     <StackPanel Spacing="12" Width="320" Margin="16">
       <!-- Editable + filter -->
       <controls:MultiSelectionComboBox IsEditable="True"
-                                       FilterMode="Contains"
                                        PlaceholderText="Type to filter…"
                                        SelectionMode="Multiple, Toggle"
                                        ItemsSource="Avalonia Flutter React Angular Vue Svelte" />
@@ -96,11 +95,11 @@
   <!-- Chevron-down path — matches Fluent ComboBox glyph (2048-unit canvas, filled) -->
   <StreamGeometry x:Key="MscbChevronGeometry">M1939 486L2029 576L1024 1581L19 576L109 486L1024 1401L1939 486Z</StreamGeometry>
 
-  <!-- Close / × path (16 × 16 viewport) -->
-  <StreamGeometry x:Key="MscbCloseGeometry">M 3 3 L 13 13 M 13 3 L 3 13</StreamGeometry>
+  <!-- Close/× path — filled polygon, same as Fluent TextBox clear button -->
+  <StreamGeometry x:Key="MscbCloseGeometry">M 11.416016,10 20,1.4160156 18.583984,0 10,8.5839846 1.4160156,0 0,1.4160156 8.5839844,10 0,18.583985 1.4160156,20 10,11.416015 18.583984,20 20,18.583985 Z</StreamGeometry>
 
-  <!-- Check-mark path (16 × 16 viewport) -->
-  <StreamGeometry x:Key="MscbCheckGeometry">M 2 9 L 6 13 L 14 4</StreamGeometry>
+  <!-- Check-mark path — filled polygon, same as Fluent CheckBox (16 × 16 viewport) -->
+  <StreamGeometry x:Key="MscbCheckGeometry">M5.5 10.586 1.707 6.793A1 1 0 0 0 .293 8.207l4.5 4.5a1 1 0 0 0 1.414 0l11-11A1 1 0 0 0 15.793.293L5.5 10.586Z</StreamGeometry>
 
   <CornerRadius x:Key="MscbCornerRadius">4</CornerRadius>
   <CornerRadius x:Key="MscbDropDownCornerRadius">6</CornerRadius>
@@ -336,13 +335,10 @@
                                 Focusable="False"
                                 Command="{Binding $parent[ItemsControl].Tag}"
                                 CommandParameter="{Binding}">
-                          <Path Width="{DynamicResource MscbCloseSize}"
-                                Height="{DynamicResource MscbCloseSize}"
-                                Stretch="Uniform"
-                                Stroke="{DynamicResource MscbChipRemoveForeground}"
-                                StrokeThickness="1.5"
-                                StrokeLineCap="Round"
-                                Data="{DynamicResource MscbCloseGeometry}"/>
+                          <PathIcon Width="{DynamicResource MscbCloseSize}"
+                                    Height="{DynamicResource MscbCloseSize}"
+                                    Data="{DynamicResource MscbCloseGeometry}"
+                                    Foreground="{DynamicResource MscbChipRemoveForeground}"/>
                         </Button>
                       </StackPanel>
                     </Border>
@@ -377,19 +373,9 @@
               <!-- Clear button: shown when ShowClearButton=True and :has-selections -->
               <Button x:Name="PART_ClearButton"
                       IsVisible="False"
-                      Focusable="False"
-                      Width="28" Height="28"
-                      Padding="0"
-                      VerticalAlignment="Center"
-                      Background="Transparent"
-                      BorderThickness="0">
-                <Path Width="{DynamicResource MscbCloseSize}"
-                      Height="{DynamicResource MscbCloseSize}"
-                      Stretch="Uniform"
-                      Stroke="{DynamicResource MscbGlyphForeground}"
-                      StrokeThickness="1.5"
-                      StrokeLineCap="Round"
-                      Data="{DynamicResource MscbCloseGeometry}"/>
+                      Theme="{StaticResource FluentTextBoxButton}">
+                <PathIcon Width="10" Height="10"
+                          Data="{DynamicResource MscbCloseGeometry}"/>
               </Button>
 
               <!-- Chevron + overlay panel (always 32 px wide) -->
@@ -473,6 +459,16 @@
     <!-- Non-editable + multiple + has selections → chips -->
     <Style Selector="^:not(:editable):multiple:has-selections /template/ ItemsControl#PART_SelectedItemsPresenter">
       <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Editable + multiple + has selections + no custom text → chips overlay (TextBox hidden behind) -->
+    <Style Selector="^:editable:multiple:has-selections:not(:has-custom-text) /template/ ItemsControl#PART_SelectedItemsPresenter">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    <!-- Hide the TextBox visually while chips act as the display; keep Opacity (not
+         IsVisible) so the TextBox remains focusable and key events still reach it. -->
+    <Style Selector="^:editable:multiple:has-selections:not(:has-custom-text) /template/ TextBox#PART_EditableTextBox">
+      <Setter Property="Opacity" Value="0"/>
     </Style>
 
     <!-- Non-editable + single + has selection → content presenter -->
