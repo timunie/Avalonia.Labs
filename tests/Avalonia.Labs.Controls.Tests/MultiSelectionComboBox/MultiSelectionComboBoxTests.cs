@@ -134,17 +134,17 @@ public class MultiSelectionComboBoxTests
         mscb.Selection.Select(0);
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.False(mscb.Classes.Contains(":has-custom-text"));
+        Assert.DoesNotContain(":has-custom-text", mscb.Classes);
 
         mscb.Text = "different text";
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.True(mscb.Classes.Contains(":has-custom-text"));
+        Assert.Contains(":has-custom-text", mscb.Classes);
 
         mscb.Text = "";
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.False(mscb.Classes.Contains(":has-custom-text"));
+        Assert.DoesNotContain(":has-custom-text", mscb.Classes);
     }
 
     [AvaloniaFact]
@@ -152,17 +152,17 @@ public class MultiSelectionComboBoxTests
     {
         var mscb = await CreateLoadedAsync();
 
-        Assert.True(mscb.Classes.Contains(":multiple"));
+        Assert.Contains(":multiple", mscb.Classes);
 
         mscb.SelectionMode = SelectionMode.Single;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.False(mscb.Classes.Contains(":multiple"));
+        Assert.DoesNotContain(":multiple", mscb.Classes);
 
         mscb.SelectionMode = SelectionMode.Multiple;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.True(mscb.Classes.Contains(":multiple"));
+        Assert.Contains(":multiple", mscb.Classes);
     }
 
     [AvaloniaFact]
@@ -173,17 +173,17 @@ public class MultiSelectionComboBoxTests
             m.ItemsSource = new List<string> { "Apple", "Banana" };
         });
 
-        Assert.False(mscb.Classes.Contains(":has-selections"));
+        Assert.DoesNotContain(":has-selections", mscb.Classes);
 
         mscb.Selection.Select(0);
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.True(mscb.Classes.Contains(":has-selections"));
+        Assert.Contains(":has-selections", mscb.Classes);
 
         mscb.Selection.Clear();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.False(mscb.Classes.Contains(":has-selections"));
+        Assert.DoesNotContain(":has-selections", mscb.Classes);
     }
 
     [AvaloniaFact]
@@ -191,17 +191,17 @@ public class MultiSelectionComboBoxTests
     {
         var mscb = await CreateLoadedAsync();
 
-        Assert.True(mscb.Classes.Contains(":editable"));
+        Assert.Contains(":editable", mscb.Classes);
 
         mscb.IsEditable = false;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.False(mscb.Classes.Contains(":editable"));
+        Assert.DoesNotContain(":editable", mscb.Classes);
 
         mscb.IsEditable = true;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.True(mscb.Classes.Contains(":editable"));
+        Assert.Contains(":editable", mscb.Classes);
     }
 
     // ─── GetSelectedItemsText ────────────────────────────────────────────────
@@ -301,7 +301,7 @@ public class MultiSelectionComboBoxTests
         mscb.RemoveItem("Apple");
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.Equal(1, mscb.SelectedItems!.Count);
+        Assert.Single(mscb.SelectedItems!);
         Assert.Equal("Banana", mscb.SelectedItems![0]);
     }
 
@@ -338,7 +338,7 @@ public class MultiSelectionComboBoxTests
 
         var ex = Record.Exception(() => mscb.RemoveItem(null));
         Assert.Null(ex);
-        Assert.Equal(1, mscb.SelectedItems!.Count);
+        Assert.Single(mscb.SelectedItems!);
     }
 
     // ─── Clear ───────────────────────────────────────────────────────────────
@@ -362,7 +362,7 @@ public class MultiSelectionComboBoxTests
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
         Assert.False(mscb.HasCustomText);
-        Assert.Equal(1, mscb.SelectedItems!.Count);
+        Assert.Single(mscb.SelectedItems!);
     }
 
     [AvaloniaFact]
@@ -383,7 +383,7 @@ public class MultiSelectionComboBoxTests
         mscb.Clear();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.Equal(0, mscb.SelectedItems!.Count);
+        Assert.Empty(mscb.SelectedItems!);
     }
 
     // ─── ForceItemsSelection ─────────────────────────────────────────────────
@@ -435,7 +435,7 @@ public class MultiSelectionComboBoxTests
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
         Assert.False(mscb.HasCustomText);
-        Assert.Equal(0, mscb.SelectedItems!.Count);
+        Assert.Empty(mscb.SelectedItems!);
     }
 
     // ─── DisplaySelectedItems ordering ───────────────────────────────────────

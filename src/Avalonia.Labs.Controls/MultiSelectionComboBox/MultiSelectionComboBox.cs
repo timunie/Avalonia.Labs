@@ -516,12 +516,13 @@ public class MultiSelectionComboBox : ListBox
     /// </summary>
     public void ResetEditableText(bool forceUpdate = false)
     {
+        HasCustomText = false;
+
         if (PART_EditableTextBox is not null)
         {
             var oldSelectionStart = PART_EditableTextBox.SelectionStart;
             var oldSelectionEnd = PART_EditableTextBox.SelectionEnd;
 
-            HasCustomText = false;
             UpdateEditableText(forceUpdate);
 
             PART_EditableTextBox.SelectionStart = oldSelectionStart;
