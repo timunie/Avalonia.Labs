@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 
@@ -20,11 +22,12 @@ namespace Avalonia.Labs.Controls
         public static readonly DefaultStringToObjectParser Instance = new();
 
         /// <inheritdoc />
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "TypeDescriptor is used intentionally; users of DefaultStringToObjectParser accept this trade-off.")]
         public bool TryCreateObjectFromString(string? input,
                                               out object? result,
                                               CultureInfo? culture = null,
                                               string? stringFormat = null,
-                                              Type? targetType = null)
+                                              [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type? targetType = null)
         {
             try
             {
@@ -58,6 +61,8 @@ namespace Avalonia.Labs.Controls
         /// </summary>
         /// <param name="list">Any collection of elements</param>
         /// <returns>the elements <see cref="Type"/></returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Reflection is used intentionally to detect element type; callers accept the trimming trade-off.")]
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Reflection is used intentionally to detect element type; callers accept the trimming trade-off.")]
         public Type? GetElementType(IEnumerable? list)
         {
             if (list is null)
@@ -67,7 +72,21 @@ namespace Avalonia.Labs.Controls
 
             var listType = list.GetType();
 
-            return listType.IsGenericType ? listType.GetGenericArguments().FirstOrDefault() : listType.GetElementType();
+            if (listType.IsGenericType)
+                return listType.GetGenericArguments().FirstOrDefault();
+
+            if (listType.IsArray)
+                return listType.GetElementType();
+
+            // Fallback: inspect implemented interfaces for IEnumerable<T> to handle
+            // non-generic wrapper types (e.g., custom collections that are not themselves generic).
+            foreach (var iface in listType.GetInterfaces())
+            {
+                if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    return iface.GetGenericArguments()[0];
+            }
+
+            return null;
         }
     }
 }

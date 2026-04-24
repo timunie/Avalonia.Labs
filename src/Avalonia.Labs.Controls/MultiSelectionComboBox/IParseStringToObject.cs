@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace Avalonia.Labs.Controls
@@ -25,6 +26,6 @@ namespace Avalonia.Labs.Controls
                                        out object? result,
                                        CultureInfo? culture = null,
                                        string? stringFormat = null,
-                                       Type? targetType = null);
+                                       [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type? targetType = null);
     }
 }

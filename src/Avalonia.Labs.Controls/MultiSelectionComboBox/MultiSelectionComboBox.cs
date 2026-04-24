@@ -61,6 +61,10 @@ public class MultiSelectionComboBox : ListBox
 
     private DispatcherTimer? _updateSelectedItemsFromTextTimer;
 
+    private bool _isDataContextUpdating;
+
+    private BindingEvaluator? _cachedBindingEvaluator;
+
     private readonly Command _removeSelectedItemCommand;
 
     //-------------------------------------------------------------------
@@ -688,9 +692,8 @@ public class MultiSelectionComboBox : ListBox
 
             if (DisplayMemberBinding is not null)
             {
-                using var bindingEvaluator = BindingEvaluator.TryCreate(DisplayMemberBinding)
-                                             ?? throw new InvalidOperationException(
-                                                 "DisplayMemberBinding is not valid");
+                var bindingEvaluator = GetOrCreateBindingEvaluator()
+                                       ?? throw new InvalidOperationException("DisplayMemberBinding is not valid");
 
                 foreach (var item in _displaySelectedItems)
                 {
@@ -717,8 +720,8 @@ public class MultiSelectionComboBox : ListBox
 
         if (DisplayMemberBinding is not null)
         {
-            using var bindingEvaluator = BindingEvaluator.TryCreate(DisplayMemberBinding)
-                                         ?? throw new InvalidOperationException("DisplayMemberBinding is not valid");
+            var bindingEvaluator = GetOrCreateBindingEvaluator()
+                                   ?? throw new InvalidOperationException("DisplayMemberBinding is not valid");
 
             return bindingEvaluator.Evaluate(SelectedItem);
         }
@@ -727,6 +730,12 @@ public class MultiSelectionComboBox : ListBox
             return string.Format(SelectedItemStringFormat, SelectedItem);
 
         return SelectedItem?.ToString();
+    }
+
+    private BindingEvaluator? GetOrCreateBindingEvaluator()
+    {
+        if (DisplayMemberBinding is null) return null;
+        return _cachedBindingEvaluator ??= BindingEvaluator.TryCreate(DisplayMemberBinding);
     }
 
     private sealed class BindingEvaluator : IDisposable
@@ -778,10 +787,29 @@ public class MultiSelectionComboBox : ListBox
         DisplaySelectedItems = selectedItemsOrderType switch
         {
             SelectedItemsOrderType.SelectedOrder => SelectedItems,
-            SelectedItemsOrderType.ItemsSourceOrder => (SelectedItems as IEnumerable<object>)?.OrderBy(o =>
-                Items.IndexOf(o)),
+            SelectedItemsOrderType.ItemsSourceOrder => GetItemsSourceOrdered(),
             _ => DisplaySelectedItems
         };
+    }
+
+    /// <summary>
+    /// Returns <see cref="SelectedItems"/> ordered by their position in <see cref="ItemsControl.Items"/>,
+    /// using a pre-built index map to avoid an O(n²) scan.
+    /// </summary>
+    private IEnumerable<object>? GetItemsSourceOrdered()
+    {
+        if (SelectedItems is not IEnumerable<object> selected) return null;
+
+        var count = Items.Count;
+        var indexMap = new Dictionary<object, int>(count);
+        for (var i = 0; i < count; i++)
+        {
+            var item = Items[i];
+            if (item is not null)
+                indexMap.TryAdd(item, i);
+        }
+
+        return selected.OrderBy(o => indexMap.TryGetValue(o, out var idx) ? idx : int.MaxValue);
     }
 
     /// <summary>
@@ -816,7 +844,7 @@ public class MultiSelectionComboBox : ListBox
             _updateSelectedItemsFromTextTimer.Stop();
         }
 
-        if (ObjectToStringComparer is not null &&
+        if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
             (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
         {
             _updateSelectedItemsFromTextTimer.Interval =
@@ -825,6 +853,8 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
     private void UpdateSelectedItemsFromTextTimer_Tick(object? sender, EventArgs e)
     {
         _updateSelectedItemsFromTextTimer?.Stop();
@@ -975,6 +1005,9 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "elementType comes from GetElementType() which uses reflection; type information cannot be preserved.")]
     private bool TryAddObjectFromString(string? input, out object? result)
     {
         try
@@ -987,8 +1020,9 @@ public class MultiSelectionComboBox : ListBox
 
             var elementType = DefaultStringToObjectParser.Instance.GetElementType(ItemsSource);
 
+            var culture = CultureInfo.CurrentCulture;
             var foundItem = StringToObjectParser.TryCreateObjectFromString(input, out result,
-                CultureInfo.CurrentUICulture, SelectedItemStringFormat, elementType);
+                culture, SelectedItemStringFormat, elementType);
 
             var addingItemEventArgs = new AddingItemEventArgs(AddingItemEvent,
                 this,
@@ -998,7 +1032,7 @@ public class MultiSelectionComboBox : ListBox
                 ItemsSource as IList,
                 elementType,
                 SelectedItemStringFormat,
-                CultureInfo.CurrentUICulture,
+                culture,
                 StringToObjectParser);
 
             RaiseEvent(addingItemEventArgs);
@@ -1109,6 +1143,18 @@ public class MultiSelectionComboBox : ListBox
         UpdateHasCustomText(null);
     }
 
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_updateSelectedItemsFromTextTimer is not null)
+        {
+            _updateSelectedItemsFromTextTimer.Stop();
+            _updateSelectedItemsFromTextTimer.Tick -= UpdateSelectedItemsFromTextTimer_Tick;
+            _updateSelectedItemsFromTextTimer = null;
+        }
+
+        base.OnDetachedFromVisualTree(e);
+    }
+
     protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
     {
         base.UpdateDataValidation(property, state, error);
@@ -1121,18 +1167,33 @@ public class MultiSelectionComboBox : ListBox
 
     protected override void OnDataContextBeginUpdate()
     {
-        // We want to update the selection of the old DataContext before the DataContext is updated.
+        // Best-effort: commit any pending text-based selection changes while still on the old
+        // DataContext. The timer fires asynchronously, so this is not a strict guarantee.
         SelectItemsFromText(0);
-
+        // Suppress intermediate OnPropertyChanged effects while bound properties are
+        // settling to their new values; we do a single clean refresh in EndUpdate.
+        _isDataContextUpdating = true;
         base.OnDataContextBeginUpdate();
     }
 
     protected override void OnDataContextEndUpdate()
     {
         base.OnDataContextEndUpdate();
-        
-        // We want to update if the item has custom text after DataContext was updated.
-        SelectItemsFromText(0);
+        _isDataContextUpdating = false;
+
+        if (IsLoaded)
+        {
+            // Rebuild display order with newly-bound SelectedItems.
+            UpdateDisplaySelectedItems();
+            // Recompute HasCustomText from the newly-bound Text and selected-items text
+            // BEFORE calling UpdateEditableText — otherwise UpdateEditableText would read
+            // the stale HasCustomText and potentially overwrite the new VM's bound Text.
+            UpdateHasCustomText(null);
+            UpdateEditableText();
+        }
+        // Note: SelectItemsFromText is intentionally NOT called here.
+        // Calling it could parse the new VM's Text and silently overwrite its SelectedItems
+        // if the text doesn't match any item in the new context.
     }
 
     private void PART_PopupOnGotFocus(object? sender, FocusChangedEventArgs e)
@@ -1187,7 +1248,8 @@ public class MultiSelectionComboBox : ListBox
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (e is { Handled: false, Source: Visual src })
+        if (e is { Handled: false, Source: Visual src } &&
+            e.InitialPressMouseButton == MouseButton.Left)
         {
             if (PART_Popup?.IsInsidePopup(src) == true)
             {
@@ -1264,9 +1326,17 @@ public class MultiSelectionComboBox : ListBox
         if (e.Property == IsEditableProperty)
             PseudoClasses.Set(s_pcEditable, IsEditable);
 
-        if (!IsLoaded) return;
+        // Invalidate the binding evaluator cache whenever the binding itself changes so the
+        // next call to GetOrCreateBindingEvaluator() picks up the new binding.
+        if (e.Property == ItemsControl.DisplayMemberBindingProperty)
+        {
+            _cachedBindingEvaluator?.Dispose();
+            _cachedBindingEvaluator = null;
+        }
 
-        if (e.Property == TextProperty)
+        if (!IsLoaded || _isDataContextUpdating) return;
+
+        if (e.Property == TextProperty && !_isTextChanging)
         {
             UpdateHasCustomText(null);
             _isUserDefinedTextInputPending = true;
@@ -1292,6 +1362,16 @@ public class MultiSelectionComboBox : ListBox
         if (e.Property == SeparatorProperty)
         {
             UpdateEditableText();
+        }
+
+        // Refresh display text and HasCustomText when any formatting/matching property changes.
+        if (e.Property == ItemsControl.DisplayMemberBindingProperty ||
+            e.Property == SelectedItemStringFormatProperty ||
+            e.Property == EditableTextStringComparisionProperty)
+        {
+            UpdateDisplaySelectedItems();
+            UpdateEditableText();
+            UpdateHasCustomText(null);
         }
     }
 
