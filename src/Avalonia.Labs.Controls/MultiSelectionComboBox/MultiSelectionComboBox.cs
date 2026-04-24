@@ -1232,6 +1232,11 @@ public class MultiSelectionComboBox : ListBox
     {
         switch (e.Key)
         {
+            case Key.Enter when IsEditable && !string.IsNullOrEmpty(Text):
+                SelectItemsFromText(0);
+                e.Handled = true;
+                break;
+
             case Key.Up when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
             case Key.Down when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
             case Key.F4:

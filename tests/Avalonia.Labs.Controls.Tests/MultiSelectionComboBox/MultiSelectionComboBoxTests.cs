@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Xunit;
 
@@ -13,6 +16,13 @@ namespace Avalonia.Labs.Controls.Tests.MultiSelectionComboBox;
 public class MultiSelectionComboBoxTests
 {
     private static async Task<Controls.MultiSelectionComboBox> CreateLoadedAsync(
+        Action<Controls.MultiSelectionComboBox>? configure = null)
+    {
+        var (mscb, _) = await CreateLoadedWithWindowAsync(configure);
+        return mscb;
+    }
+
+    private static async Task<(Controls.MultiSelectionComboBox Mscb, Window Window)> CreateLoadedWithWindowAsync(
         Action<Controls.MultiSelectionComboBox>? configure = null)
     {
         var mscb = new Controls.MultiSelectionComboBox
@@ -28,7 +38,7 @@ public class MultiSelectionComboBoxTests
 
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        return mscb;
+        return (mscb, window);
     }
 
     // ─── HasCustomText ───────────────────────────────────────────────────────
@@ -476,5 +486,136 @@ public class MultiSelectionComboBoxTests
         var text = mscb.GetSelectedItemsText();
         // ItemsSourceOrder = source order: Apple, Cherry
         Assert.Equal("Apple, Cherry", text);
+    }
+
+    // ─── Select by typing ────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task SelectItemsByText_InSingleMode_SelectsMatchingItem()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.SelectionMode = SelectionMode.Single;
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Text = "Banana";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Banana", mscb.SelectedItem);
+    }
+
+    [AvaloniaFact]
+    public async Task SelectItemsByText_InSingleMode_UnknownText_DoesNotSelect()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.SelectionMode = SelectionMode.Single;
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Null(mscb.SelectedItem);
+    }
+
+    // ─── Add items by text ───────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task AddItem_WhenStringToObjectParserIsSet_AddsNewItemToSource()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.StringToObjectParser = DefaultStringToObjectParser.Instance;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Contains("Mango", items);
+    }
+
+    [AvaloniaFact]
+    public async Task AddItem_WhenHandlerRejectsItem_DoesNotAddToSource()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.StringToObjectParser = DefaultStringToObjectParser.Instance;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.AddingItem += (_, e) => e.Handled = true; // reject all new items
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.DoesNotContain("Mango", items);
+    }
+
+    // ─── Enter key confirmation ───────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task EnterKey_SelectsItemFromTypedText()
+    {
+        var (mscb, window) = await CreateLoadedWithWindowAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Focus();
+        mscb.Text = "Banana";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Banana", selectedTexts);
+    }
+
+    [AvaloniaFact]
+    public async Task EnterKey_InSingleMode_SelectsItem()
+    {
+        var (mscb, window) = await CreateLoadedWithWindowAsync(m =>
+        {
+            m.SelectionMode = SelectionMode.Single;
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Focus();
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Apple", mscb.SelectedItem);
     }
 }
