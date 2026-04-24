@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Presenters;
@@ -22,11 +23,11 @@ using Avalonia.VisualTree;
 namespace Avalonia.Labs.Controls;
 
 [TemplatePart(Name = nameof(PART_Popup), Type = typeof(Popup))]
-[TemplatePart(Name = "PART_SelectedItemsPresenter", Type = typeof(ItemsControl))]
+[TemplatePart(Name = nameof(PART_SelectedItemsPresenter), Type = typeof(ItemsControl))]
 [TemplatePart(Name = nameof(PART_ItemsPresenter), Type = typeof(ItemsPresenter))]
 [TemplatePart(Name = nameof(PART_EditableTextBox), Type = typeof(TextBox))]
 [TemplatePart(Name = nameof(PART_DropDownOverlay), Type = typeof(Border))]
-[TemplatePart(Name = nameof(PART_SelectedItemsPresenter), Type = typeof(ItemsPresenter))]
+[TemplatePart(Name = nameof(PART_ClearButton), Type = typeof(Button))]
 public class MultiSelectionComboBox : ListBox
 {
     //-------------------------------------------------------------------
@@ -41,9 +42,12 @@ public class MultiSelectionComboBox : ListBox
     private Border? PART_DropDownOverlay;
     private ItemsPresenter? PART_ItemsPresenter;
     private ItemsControl? PART_SelectedItemsPresenter;
+    private Button? PART_ClearButton;
     // ReSharper restore InconsistentNaming
 
     private const string s_pcPressed = ":pressed";
+    private const string s_pcEditable = ":editable";
+    private const string s_pcHasSelections = ":has-selections";
 
     private bool _isUserDefinedTextInputPending;
 
@@ -57,11 +61,18 @@ public class MultiSelectionComboBox : ListBox
 
     private DispatcherTimer? _updateSelectedItemsFromTextTimer;
 
+    private readonly Command _removeSelectedItemCommand;
+
     //-------------------------------------------------------------------
     //
     //  Constructors
     // 
     //-------------------------------------------------------------------
+
+    public MultiSelectionComboBox()
+    {
+        _removeSelectedItemCommand = new Command(param => RemoveItem(param));
+    }
 
     static MultiSelectionComboBox()
     {
@@ -70,6 +81,7 @@ public class MultiSelectionComboBox : ListBox
         // Listen for SelectionChanges
         SelectionChangedEvent.AddClassHandler<MultiSelectionComboBox>((s, _) =>
         {
+            s.UpdateHasSelectionsPseudoClass();
             Dispatcher.UIThread.Post(() =>
             {
                 s.UpdateDisplaySelectedItems();
@@ -418,6 +430,35 @@ public class MultiSelectionComboBox : ListBox
     }
 
     /// <summary>
+    /// Defines the <see cref="ShowClearButton" /> property
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowClearButtonProperty =
+        AvaloniaProperty.Register<MultiSelectionComboBox, bool>(nameof(ShowClearButton));
+
+    /// <summary>
+    /// Gets or sets whether a clear button is shown when items are selected.
+    /// </summary>
+    public bool ShowClearButton
+    {
+        get => GetValue(ShowClearButtonProperty);
+        set => SetValue(ShowClearButtonProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="RemoveSelectedItemCommand" /> property
+    /// </summary>
+    public static readonly DirectProperty<MultiSelectionComboBox, ICommand> RemoveSelectedItemCommandProperty =
+        AvaloniaProperty.RegisterDirect<MultiSelectionComboBox, ICommand>(
+            nameof(RemoveSelectedItemCommand),
+            o => o.RemoveSelectedItemCommand);
+
+    /// <summary>
+    /// Gets the command that removes a given item from <see cref="ListBox.SelectedItems"/>.
+    /// Intended for use in chip-strip item templates via <c>TemplateBinding</c>.
+    /// </summary>
+    public ICommand RemoveSelectedItemCommand => _removeSelectedItemCommand;
+
+    /// <summary>
     /// Defines the <see cref="SelectItemsFromTextInputDelay" /> property
     /// </summary>
     public static readonly StyledProperty<int> SelectItemsFromTextInputDelayProperty =
@@ -645,9 +686,9 @@ public class MultiSelectionComboBox : ListBox
         {
             List<string?> values = [];
 
-            if (DisplayMemberBinding is not null || SelectedItemStringFormat != null)
+            if (DisplayMemberBinding is not null)
             {
-                using var bindingEvaluator = BindingEvaluator<string>.TryCreate(DisplayMemberBinding)
+                using var bindingEvaluator = BindingEvaluator.TryCreate(DisplayMemberBinding)
                                              ?? throw new InvalidOperationException(
                                                  "DisplayMemberBinding is not valid");
 
@@ -656,9 +697,16 @@ public class MultiSelectionComboBox : ListBox
                     values.Add(bindingEvaluator.Evaluate(item));
                 }
             }
+            else if (SelectedItemStringFormat is not null)
+            {
+                foreach (var item in _displaySelectedItems)
+                {
+                    values.Add(string.Format(SelectedItemStringFormat, item));
+                }
+            }
             else
             {
-                foreach (var item in _displaySelectedItems ?? Enumerable.Empty<object>())
+                foreach (var item in _displaySelectedItems)
                 {
                     values.Add(item?.ToString());
                 }
@@ -667,15 +715,46 @@ public class MultiSelectionComboBox : ListBox
             return values.Count == 0 ? null : string.Join(Separator ?? string.Empty, values);
         }
 
-        if (DisplayMemberBinding is not null || SelectedItemStringFormat != null)
+        if (DisplayMemberBinding is not null)
         {
-            using var bindingEvaluator = BindingEvaluator<string>.TryCreate(DisplayMemberBinding)
+            using var bindingEvaluator = BindingEvaluator.TryCreate(DisplayMemberBinding)
                                          ?? throw new InvalidOperationException("DisplayMemberBinding is not valid");
 
             return bindingEvaluator.Evaluate(SelectedItem);
         }
 
+        if (SelectedItemStringFormat is not null)
+            return string.Format(SelectedItemStringFormat, SelectedItem);
+
         return SelectedItem?.ToString();
+    }
+
+    private sealed class BindingEvaluator : IDisposable
+    {
+        private readonly ContentControl _host;
+        private readonly IDisposable? _subscription;
+
+        private BindingEvaluator(ContentControl host, IDisposable? subscription)
+        {
+            _host = host;
+            _subscription = subscription;
+        }
+
+        public static BindingEvaluator? TryCreate(BindingBase? binding)
+        {
+            if (binding is null) return null;
+            var host = new ContentControl();
+            var sub = host.Bind(ContentControl.ContentProperty, binding);
+            return new BindingEvaluator(host, sub);
+        }
+
+        public string? Evaluate(object? source)
+        {
+            _host.DataContext = source;
+            return _host.GetValue(ContentControl.ContentProperty)?.ToString();
+        }
+
+        public void Dispose() => _subscription?.Dispose();
     }
 
     private void UpdateHasCustomText(string? selectedItemsText)
@@ -809,6 +888,8 @@ public class MultiSelectionComboBox : ListBox
                                     foundItem = true;
                                     position++;
                                 }
+
+                                if (foundItem) break;
                             }
                         }
                     }
@@ -971,7 +1052,7 @@ public class MultiSelectionComboBox : ListBox
         {
             SelectedItems.Remove(item);
         }
-        else if (SelectionMode.HasFlag(SelectionMode.Single))
+        else if (SelectionMode.HasFlag(SelectionMode.Single) && Equals(SelectedItem, item))
         {
             Selection.SelectedItem = null;
         }
@@ -997,6 +1078,11 @@ public class MultiSelectionComboBox : ListBox
             PART_Popup.GotFocus -= PART_PopupOnGotFocus;
         }
 
+        if (PART_ClearButton is not null)
+        {
+            PART_ClearButton.Click -= PART_ClearButtonOnClick;
+        }
+
         base.OnApplyTemplate(e);
 
         // Init template parts
@@ -1005,6 +1091,7 @@ public class MultiSelectionComboBox : ListBox
         PART_DropDownOverlay = e.NameScope.Get<Border>(nameof(PART_DropDownOverlay));
         PART_ItemsPresenter = e.NameScope.Get<ItemsPresenter>(nameof(PART_ItemsPresenter));
         PART_SelectedItemsPresenter = e.NameScope.Get<ItemsControl>(nameof(PART_SelectedItemsPresenter));
+        PART_ClearButton = e.NameScope.Find<Button>(nameof(PART_ClearButton));
 
         PART_EditableTextBox.LostFocus += PART_EditableTextBox_LostFocus;
 
@@ -1013,6 +1100,11 @@ public class MultiSelectionComboBox : ListBox
         PART_DropDownOverlay.PointerCaptureLost += OnDropDownOverlayPointerCaptureLost;
 
         PART_Popup.GotFocus += PART_PopupOnGotFocus;
+
+        if (PART_ClearButton is not null)
+        {
+            PART_ClearButton.Click += PART_ClearButtonOnClick;
+        }
         
         UpdateHasCustomText(null);
     }
@@ -1123,6 +1215,20 @@ public class MultiSelectionComboBox : ListBox
         SelectItemsFromText(0);
     }
 
+    private void PART_ClearButtonOnClick(object? sender, RoutedEventArgs e)
+    {
+        Clear();
+        e.Handled = true;
+    }
+
+    private void UpdateHasSelectionsPseudoClass()
+    {
+        var hasSelections = SelectionMode.HasFlag(SelectionMode.Multiple)
+            ? SelectedItems?.Count > 0
+            : SelectedItem is not null;
+        PseudoClasses.Set(s_pcHasSelections, hasSelections);
+    }
+
     private void OnDropDownOverlayPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (PART_DropDownOverlay is not null && e.GetCurrentPoint(PART_DropDownOverlay).Properties.IsLeftButtonPressed)
@@ -1155,6 +1261,9 @@ public class MultiSelectionComboBox : ListBox
     {
         base.OnPropertyChanged(e);
 
+        if (e.Property == IsEditableProperty)
+            PseudoClasses.Set(s_pcEditable, IsEditable);
+
         if (!IsLoaded) return;
 
         if (e.Property == TextProperty)
@@ -1178,6 +1287,11 @@ public class MultiSelectionComboBox : ListBox
         if (e.Property == SelectedItemsProperty || e.Property == SeparatorProperty)
         {
             UpdateHasCustomText(null);
+        }
+
+        if (e.Property == SeparatorProperty)
+        {
+            UpdateEditableText();
         }
     }
 
