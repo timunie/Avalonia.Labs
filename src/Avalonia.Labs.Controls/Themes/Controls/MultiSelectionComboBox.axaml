@@ -49,9 +49,11 @@
       <SolidColorBrush x:Key="MscbChipRemoveForegroundHover"    Color="#CC000000"/>
       <SolidColorBrush x:Key="MscbItemBackgroundPointerOver"    Color="#14000000"/>
       <SolidColorBrush x:Key="MscbItemBackgroundPressed"        Color="#1F000000"/>
-      <SolidColorBrush x:Key="MscbItemBackgroundSelected"       Color="#1A0078D4"/>
-      <SolidColorBrush x:Key="MscbItemBackgroundSelectedHover"  Color="#260078D4"/>
-      <SolidColorBrush x:Key="MscbItemCheckForeground"          Color="#FF0078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelected"              Color="#1A0078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPointerOver"  Color="#260078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPressed"       Color="#330078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedDisabled"      Color="#0D0078D4"/>
+      <SolidColorBrush x:Key="MscbItemCheckForeground"                 Color="#FF0078D4"/>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Dark">
@@ -78,9 +80,11 @@
       <SolidColorBrush x:Key="MscbChipRemoveForegroundHover"    Color="#FFFFFFFF"/>
       <SolidColorBrush x:Key="MscbItemBackgroundPointerOver"    Color="#14FFFFFF"/>
       <SolidColorBrush x:Key="MscbItemBackgroundPressed"        Color="#1FFFFFFF"/>
-      <SolidColorBrush x:Key="MscbItemBackgroundSelected"       Color="#2060CDFF"/>
-      <SolidColorBrush x:Key="MscbItemBackgroundSelectedHover"  Color="#2B60CDFF"/>
-      <SolidColorBrush x:Key="MscbItemCheckForeground"          Color="#FF60CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelected"              Color="#2060CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPointerOver"  Color="#2B60CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPressed"       Color="#3360CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedDisabled"      Color="#0D60CDFF"/>
+      <SolidColorBrush x:Key="MscbItemCheckForeground"                 Color="#FF60CDFF"/>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
@@ -89,8 +93,8 @@
        Shared (theme-independent) resources
        ═══════════════════════════════════════════════════════════════ -->
 
-  <!-- Chevron-down path (16 × 16 viewport) -->
-  <StreamGeometry x:Key="MscbChevronGeometry">M 2 5.5 L 9 12.5 L 16 5.5</StreamGeometry>
+  <!-- Chevron-down path — matches Fluent ComboBox glyph (2048-unit canvas, filled) -->
+  <StreamGeometry x:Key="MscbChevronGeometry">M1939 486L2029 576L1024 1581L19 576L109 486L1024 1401L1939 486Z</StreamGeometry>
 
   <!-- Close / × path (16 × 16 viewport) -->
   <StreamGeometry x:Key="MscbCloseGeometry">M 3 3 L 13 13 M 13 3 L 3 13</StreamGeometry>
@@ -130,61 +134,88 @@
        ═══════════════════════════════════════════════════════════════ -->
   <ControlTheme x:Key="{x:Type controls:MultiSelectionComboBoxItem}"
                 TargetType="controls:MultiSelectionComboBoxItem">
-    <Setter Property="Padding"              Value="11,6,11,6"/>
+    <Setter Property="Padding"                    Value="11,6,11,6"/>
+    <Setter Property="CornerRadius"               Value="4"/>
     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     <Setter Property="VerticalContentAlignment"   Value="Center"/>
-    <Setter Property="Background"           Value="Transparent"/>
-    <Setter Property="Foreground"           Value="{DynamicResource MscbDropDownForeground}"/>
-    <Setter Property="FocusAdorner"         Value="{x:Null}"/>
+    <Setter Property="Background"                 Value="Transparent"/>
+    <Setter Property="BorderBrush"                Value="Transparent"/>
+    <Setter Property="BorderThickness"            Value="1"/>
+    <Setter Property="Foreground"                 Value="{DynamicResource MscbDropDownForeground}"/>
+    <Setter Property="FocusAdorner"               Value="{x:Null}"/>
 
     <Setter Property="Template">
       <ControlTemplate>
+        <!--
+          PART_LayoutRoot: the visual root for background / border / focus ring.
+          A fixed 20-wide column for the checkmark is always reserved so all items
+          line up consistently regardless of selection state.
+        -->
         <Border x:Name="PART_LayoutRoot"
                 Background="{TemplateBinding Background}"
-                CornerRadius="4"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
                 Padding="{TemplateBinding Padding}">
-          <Grid ColumnDefinitions="*,20">
+          <Grid ColumnDefinitions="*, 20">
             <ContentPresenter Grid.Column="0"
                               Content="{TemplateBinding Content}"
                               ContentTemplate="{TemplateBinding ContentTemplate}"
                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-            <!-- Checkmark: shown only when :selected -->
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+            <!-- Checkmark: non-interactive, shown only when :selected -->
             <PathIcon x:Name="CheckMark"
                       Grid.Column="1"
                       Width="{DynamicResource MscbCheckSize}"
                       Height="{DynamicResource MscbCheckSize}"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
+                      IsHitTestVisible="False"
                       IsVisible="False"
                       Foreground="{DynamicResource MscbItemCheckForeground}"
-                      Data="{DynamicResource MscbCheckGeometry}" />
+                      Data="{DynamicResource MscbCheckGeometry}"/>
           </Grid>
         </Border>
       </ControlTemplate>
     </Setter>
 
+    <!-- Normal interaction states -->
     <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
       <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundPointerOver}"/>
     </Style>
     <Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
       <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundPressed}"/>
     </Style>
-    <Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-      <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelected}"/>
+
+    <!-- Selected state group — nested to avoid specificity surprises -->
+    <Style Selector="^:selected">
+      <Style Selector="^ /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelected}"/>
+      </Style>
+      <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedPointerOver}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedPressed}"/>
+      </Style>
+      <Style Selector="^:disabled /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedDisabled}"/>
+      </Style>
     </Style>
-    <Style Selector="^:selected:pointerover /template/ Border#PART_LayoutRoot">
-      <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedHover}"/>
-    </Style>
+
+    <!-- Checkmark visibility -->
     <Style Selector="^:selected /template/ PathIcon#CheckMark">
       <Setter Property="IsVisible" Value="True"/>
     </Style>
+
+    <!-- Disabled: dim the whole item (foreground, checkmark, etc.) -->
     <Style Selector="^:disabled">
       <Setter Property="Opacity" Value="0.4"/>
     </Style>
+
+    <!-- Focus ring -->
     <Style Selector="^:focus-visible /template/ Border#PART_LayoutRoot">
-      <Setter Property="BorderBrush"     Value="{DynamicResource MscbBorderBrushFocused}"/>
-      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MscbBorderBrushFocused}"/>
     </Style>
   </ControlTheme>
 
@@ -210,16 +241,22 @@
     <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
     <Setter Property="KeyboardNavigation.TabNavigation"           Value="Once"/>
+    <Setter Property="TextBoxTheme"          Value="{StaticResource MscbTextBoxTheme}"/>
+    <Setter Property="SelectedItemsItemPanel">
+      <ItemsPanelTemplate>
+        <WrapPanel/>
+      </ItemsPanelTemplate>
+    </Setter>
 
     <Setter Property="Template">
       <ControlTemplate>
         <DataValidationErrors>
           <!--
             Outer grid: Col 0 = content (chips / text-box / placeholder / single-item).
-                        Col 1 = right controls (clear button, chevron glyph, drop-down overlay).
+                        Col 1 = right controls (clear button + chevron, side-by-side).
             The Background border spans both columns for the full-width visual.
           -->
-          <Grid ColumnDefinitions="*, 32">
+          <Grid ColumnDefinitions="*, Auto">
 
             <!-- Full-width visual border -->
             <Border x:Name="PART_Background"
@@ -248,7 +285,7 @@
                    Bound TwoWay to Text so the user's typing flows through to filter logic.
               -->
               <TextBox x:Name="PART_EditableTextBox"
-                       Theme="{StaticResource MscbTextBoxTheme}"
+                       Theme="{TemplateBinding TextBoxTheme}"
                        IsVisible="False"
                        Text="{TemplateBinding Text, Mode=TwoWay}"
                        PlaceholderText="{TemplateBinding PlaceholderText}"
@@ -275,13 +312,8 @@
               <ItemsControl x:Name="PART_SelectedItemsPresenter"
                             IsVisible="False"
                             ItemsSource="{TemplateBinding DisplaySelectedItems}"
-                            ItemsPanel="{TemplateBinding SelectedItemsPanelTemplate}"
+                            ItemsPanel="{TemplateBinding SelectedItemsItemPanel}"
                             Tag="{TemplateBinding RemoveSelectedItemCommand}">
-                <ItemsControl.ItemsPanel>
-                  <ItemsPanelTemplate>
-                    <WrapPanel />
-                  </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
                     <!-- Chip -->
@@ -304,10 +336,13 @@
                                 Focusable="False"
                                 Command="{Binding $parent[ItemsControl].Tag}"
                                 CommandParameter="{Binding}">
-                          <PathIcon Width="{DynamicResource MscbCloseSize}"
-                                    Height="{DynamicResource MscbCloseSize}"
-                                    Data="{DynamicResource MscbCloseGeometry}"
-                                    Foreground="{DynamicResource MscbChipRemoveForeground}"/>
+                          <Path Width="{DynamicResource MscbCloseSize}"
+                                Height="{DynamicResource MscbCloseSize}"
+                                Stretch="Uniform"
+                                Stroke="{DynamicResource MscbChipRemoveForeground}"
+                                StrokeThickness="1.5"
+                                StrokeLineCap="Round"
+                                Data="{DynamicResource MscbCloseGeometry}"/>
                         </Button>
                       </StackPanel>
                     </Border>
@@ -336,8 +371,8 @@
                          VerticalAlignment="Center"/>
             </Panel>
 
-            <!-- ── Right column (arrow / clear button) ───────────── -->
-            <Panel Grid.Column="1">
+            <!-- ── Right column (clear button + chevron, side-by-side) ───── -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
 
               <!-- Clear button: shown when ShowClearButton=True and :has-selections -->
               <Button x:Name="PART_ClearButton"
@@ -345,38 +380,43 @@
                       Focusable="False"
                       Width="28" Height="28"
                       Padding="0"
-                      HorizontalAlignment="Center"
                       VerticalAlignment="Center"
                       Background="Transparent"
                       BorderThickness="0">
-                <PathIcon Width="{DynamicResource MscbCloseSize}"
-                          Height="{DynamicResource MscbCloseSize}"
-                          Data="{DynamicResource MscbCloseGeometry}"
-                          Foreground="{DynamicResource MscbGlyphForeground}"/>
+                <Path Width="{DynamicResource MscbCloseSize}"
+                      Height="{DynamicResource MscbCloseSize}"
+                      Stretch="Uniform"
+                      Stroke="{DynamicResource MscbGlyphForeground}"
+                      StrokeThickness="1.5"
+                      StrokeLineCap="Round"
+                      Data="{DynamicResource MscbCloseGeometry}"/>
               </Button>
 
-              <!-- Drop-down chevron -->
-              <PathIcon x:Name="DropDownGlyph"
-                        Width="{DynamicResource MscbGlyphSize}"
-                        Height="{DynamicResource MscbGlyphSize}"
-                        IsHitTestVisible="False"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Foreground="{DynamicResource MscbGlyphForeground}"
-                        Data="{DynamicResource MscbChevronGeometry}"/>
+              <!-- Chevron + overlay panel (always 32 px wide) -->
+              <Panel Width="32">
+                <!-- Drop-down chevron -->
+                <PathIcon x:Name="DropDownGlyph"
+                          Width="{DynamicResource MscbGlyphSize}"
+                          Height="{DynamicResource MscbGlyphSize}"
+                          IsHitTestVisible="False"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Foreground="{DynamicResource MscbGlyphForeground}"
+                          Data="{DynamicResource MscbChevronGeometry}"/>
 
-              <!--
-                Transparent overlay: in editable mode the TextBox consumes all pointer
-                events in col 0.  This overlay sits over the right column so the user can
-                still click the chevron area to open the drop-down.
-                Made visible via style below when IsEditable=True.
-              -->
-              <Border x:Name="PART_DropDownOverlay"
-                      IsVisible="False"
-                      Background="Transparent"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"/>
-            </Panel>
+                <!--
+                  Transparent overlay: in editable mode the TextBox consumes all pointer
+                  events in col 0. This overlay sits over the chevron area so the user can
+                  still click it to open the drop-down.
+                  Made visible via style below when IsEditable=True.
+                -->
+                <Border x:Name="PART_DropDownOverlay"
+                        IsVisible="False"
+                        Background="Transparent"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
+              </Panel>
+            </StackPanel>
 
             <!-- ── Drop-down Popup ────────────────────────────────── -->
             <Popup x:Name="PART_Popup"
@@ -448,9 +488,6 @@
     <!-- Clear button swaps with chevron when ShowClearButton=True and items are selected -->
     <Style Selector="^:has-selections[ShowClearButton=True] /template/ Button#PART_ClearButton">
       <Setter Property="IsVisible" Value="True"/>
-    </Style>
-    <Style Selector="^:has-selections[ShowClearButton=True] /template/ PathIcon#DropDownGlyph">
-      <Setter Property="IsVisible" Value="False"/>
     </Style>
 
     <!-- ── State styles ─────────────────────────────────────────── -->

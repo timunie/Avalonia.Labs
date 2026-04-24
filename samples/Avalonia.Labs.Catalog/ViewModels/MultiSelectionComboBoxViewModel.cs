@@ -31,7 +31,6 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
     [ObservableProperty] public partial bool IsReadOnly       { get; set; } = false;
     [ObservableProperty] public partial bool ShowClearButton  { get; set; } = true;
     [ObservableProperty] public partial int  MaxSelectedItems { get; set; } = -1;
-    [ObservableProperty] public partial FilterMode FilterMode { get; set; } = FilterMode.Contains;
 
     [ObservableProperty] public partial SelectedItemsOrderType OrderSelectedItemsBy    { get; set; } = SelectedItemsOrderType.SelectedOrder;
     [ObservableProperty] public partial int  SelectItemsFromTextInputDelay             { get; set; } = -1;

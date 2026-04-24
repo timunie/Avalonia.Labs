@@ -29,15 +29,6 @@
                          Minimum="-1" Maximum="10" Increment="1" FormatString="0"/>
         </StackPanel>
 
-        <StackPanel Spacing="4">
-          <TextBlock Text="FilterMode  (only active when IsEditable)"/>
-          <ComboBox SelectedItem="{Binding FilterMode}">
-            <controls:FilterMode>None</controls:FilterMode>
-            <controls:FilterMode>StartsWith</controls:FilterMode>
-            <controls:FilterMode>Contains</controls:FilterMode>
-          </ComboBox>
-        </StackPanel>
-
         <CheckBox Content="InterceptKeyboardSelection" IsChecked="{Binding InterceptKeyboardSelection}"/>
         <CheckBox Content="InterceptMouseWheelSelection" IsChecked="{Binding InterceptMouseWheelSelection}"/>
 
@@ -71,12 +62,8 @@
               IsEditable="{Binding IsEditable}"
               IsReadOnly="{Binding IsReadOnly}"
               ShowClearButton="{Binding ShowClearButton}"
-              MaxSelectedItems="{Binding MaxSelectedItems}"
-              FilterMode="{Binding FilterMode}"
               OrderSelectedItemsBy="{Binding OrderSelectedItemsBy}"
               SelectItemsFromTextInputDelay="{Binding SelectItemsFromTextInputDelay}"
-              InterceptKeyboardSelection="{Binding InterceptKeyboardSelection}"
-              InterceptMouseWheelSelection="{Binding InterceptMouseWheelSelection}"
               Separator=", "
               PlaceholderText="Select frameworks…"/>
         </StackPanel>
@@ -93,10 +80,7 @@
               IsEditable="{Binding IsEditable}"
               IsReadOnly="{Binding IsReadOnly}"
               ShowClearButton="{Binding ShowClearButton}"
-              FilterMode="{Binding FilterMode}"
-              InterceptKeyboardSelection="{Binding InterceptKeyboardSelection}"
-              InterceptMouseWheelSelection="{Binding InterceptMouseWheelSelection}"
-              PlaceholderText="Select a framework…"/>
+            PlaceholderText="Select a framework…"/>
         </StackPanel>
 
       </StackPanel>

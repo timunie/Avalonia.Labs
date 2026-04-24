@@ -48,6 +48,7 @@ public class MultiSelectionComboBox : ListBox
     private const string s_pcPressed = ":pressed";
     private const string s_pcEditable = ":editable";
     private const string s_pcHasSelections = ":has-selections";
+    private const string s_pcMultiple = ":multiple";
 
     private bool _isUserDefinedTextInputPending;
 
@@ -1141,6 +1142,7 @@ public class MultiSelectionComboBox : ListBox
         }
         
         UpdateHasCustomText(null);
+        PseudoClasses.Set(s_pcMultiple, SelectionMode.HasFlag(SelectionMode.Multiple));
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -1325,6 +1327,9 @@ public class MultiSelectionComboBox : ListBox
 
         if (e.Property == IsEditableProperty)
             PseudoClasses.Set(s_pcEditable, IsEditable);
+
+        if (e.Property == SelectionModeProperty)
+            PseudoClasses.Set(s_pcMultiple, SelectionMode.HasFlag(SelectionMode.Multiple));
 
         // Invalidate the binding evaluator cache whenever the binding itself changes so the
         // next call to GetOrCreateBindingEvaluator() picks up the new binding.
