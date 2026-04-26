@@ -422,19 +422,31 @@
                       BorderThickness="{DynamicResource MscbDropDownBorderThickness}"
                       CornerRadius="{DynamicResource MscbDropDownCornerRadius}"
                       Padding="{DynamicResource MscbDropDownContentPadding}">
-                <Grid RowDefinitions="Auto,*,Auto">
+                 <Grid RowDefinitions="Auto,*,Auto">
                   <ContentPresenter x:Name="PART_DropDownHeader"
                                     Grid.Row="0"
                                     IsVisible="{TemplateBinding IsDropDownHeaderVisible}"
                                     Content="{TemplateBinding DropDownHeaderContent}"
                                     ContentTemplate="{TemplateBinding DropDownHeaderContentTemplate}"/>
-                  <ScrollViewer Grid.Row="1"
-                                HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                                VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
-                                IsScrollChainingEnabled="False">
-                    <ItemsPresenter x:Name="PART_ItemsPresenter"
-                                    ItemsPanel="{TemplateBinding ItemsPanel}"/>
-                  </ScrollViewer>
+                  <!--
+                    Row 1 is a Panel so we can layer the items list and the custom-text
+                    overlay in the same cell. The overlay sits on top and eats all pointer
+                    events when :has-custom-text, preventing accidental item selection while
+                    the user is typing text that doesn't match any existing item.
+                  -->
+                  <Panel Grid.Row="1">
+                    <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                  VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                  IsScrollChainingEnabled="False">
+                      <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                      ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                    </ScrollViewer>
+                    <Border x:Name="PART_CustomTextOverlay"
+                            IsVisible="False"
+                            IsHitTestVisible="True"
+                            Background="{DynamicResource MscbDropDownBackground}"
+                            Opacity="0.6"/>
+                  </Panel>
                   <ContentPresenter x:Name="PART_DropDownFooter"
                                     Grid.Row="2"
                                     IsVisible="{TemplateBinding IsDropDownFooterVisible}"
@@ -476,6 +488,11 @@
 
     <!-- Clear button swaps with chevron when ShowClearButton=True and items are selected -->
     <Style Selector="^:has-selections[ShowClearButton=True] /template/ Button#PART_ClearButton">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Custom text: overlay the items list so it cannot be interacted with -->
+    <Style Selector="^:has-custom-text /template/ Border#PART_CustomTextOverlay">
       <Setter Property="IsVisible" Value="True"/>
     </Style>
 
