@@ -618,4 +618,214 @@ public class MultiSelectionComboBoxTests
 
         Assert.Equal("Apple", mscb.SelectedItem);
     }
+
+    // ─── SelectItemsFromTextInputDelay (auto-select while typing) ────────────
+
+    [AvaloniaFact]
+    public async Task TypingText_WithAutoDelay_SelectsMatchingItem()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Banana";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Banana", selectedTexts);
+    }
+
+    [AvaloniaFact]
+    public async Task TypingText_WithAutoDelay_SelectsMultipleMatchingItems()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Apple, Cherry";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Apple", selectedTexts);
+        Assert.Contains("Cherry", selectedTexts);
+        Assert.DoesNotContain("Banana", selectedTexts);
+    }
+
+    [AvaloniaFact]
+    public async Task TypingText_WithAutoDelay_ClearsSelection_WhenTextCleared()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.NotEmpty(mscb.SelectedItems!);
+
+        mscb.Text = "";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Empty(mscb.SelectedItems!);
+    }
+
+    // ─── Auto-add unknown items while typing ─────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task TypingUnknownText_WithParserAndAutoDelay_AddsItemToSourceAndSelectsIt()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.StringToObjectParser = DefaultStringToObjectParser.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Contains("Mango", items);
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Mango", selectedTexts);
+    }
+
+    [AvaloniaFact]
+    public async Task TypingUnknownText_WithoutParser_DoesNotAddItemToSource()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            // No StringToObjectParser set
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.DoesNotContain("Mango", items);
+        Assert.Empty(mscb.SelectedItems!);
+    }
+
+    [AvaloniaFact]
+    public async Task TypingUnknownText_WithParserAndAutoDelay_AddingItemEventCanRejectIt()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.StringToObjectParser = DefaultStringToObjectParser.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.AddingItem += (_, e) => e.Handled = true; // reject all new items
+
+        mscb.Text = "Mango";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.DoesNotContain("Mango", items);
+        Assert.Empty(mscb.SelectedItems!);
+    }
+
+    // ─── SelectedItems binding ────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task BoundSelectedItems_ReceivesItemsWhenSelected()
+    {
+        var boundItems = new ObservableCollection<object>();
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.SelectedItems = boundItems;
+        });
+
+        mscb.Selection.Select(0);
+        mscb.Selection.Select(2);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Contains("Apple", boundItems);
+        Assert.Contains("Cherry", boundItems);
+        Assert.DoesNotContain("Banana", boundItems);
+    }
+
+    [AvaloniaFact]
+    public async Task BoundSelectedItems_PrePopulated_SelectsMatchingItems()
+    {
+        var boundItems = new ObservableCollection<object> { "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.SelectedItems = boundItems;
+        });
+
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Contains("Banana", mscb.SelectedItems!.Cast<object>());
+        Assert.Single(mscb.SelectedItems!);
+    }
+
+    [AvaloniaFact]
+    public async Task BoundSelectedItems_RemovingFromCollection_DeselectedInMscb()
+    {
+        var boundItems = new ObservableCollection<object>();
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+            m.SelectedItems = boundItems;
+        });
+
+        mscb.Selection.Select(0);
+        mscb.Selection.Select(1);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal(2, boundItems.Count);
+
+        boundItems.Remove("Apple");
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Single(mscb.SelectedItems!);
+        Assert.Equal("Banana", mscb.SelectedItems![0]);
+    }
+
+    [AvaloniaFact]
+    public async Task BoundSelectedItems_ReplacingCollection_UpdatesSelection()
+    {
+        var firstItems = new ObservableCollection<object> { "Apple" };
+        var secondItems = new ObservableCollection<object> { "Cherry" };
+
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.SelectedItems = firstItems;
+        });
+
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        Assert.Contains("Apple", mscb.SelectedItems!.Cast<object>());
+
+        mscb.SelectedItems = secondItems;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.DoesNotContain("Apple", mscb.SelectedItems!.Cast<object>());
+        Assert.Contains("Cherry", mscb.SelectedItems!.Cast<object>());
+    }
 }

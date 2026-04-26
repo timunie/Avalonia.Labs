@@ -58,12 +58,14 @@
               Width="380"
               HorizontalAlignment="Left"
               ItemsSource="{Binding Frameworks}"
+              SelectedItems="{Binding SelectedFrameworks}"
               SelectionMode="Multiple, Toggle"
               IsEditable="{Binding IsEditable}"
               IsReadOnly="{Binding IsReadOnly}"
               ShowClearButton="{Binding ShowClearButton}"
               OrderSelectedItemsBy="{Binding OrderSelectedItemsBy}"
               SelectItemsFromTextInputDelay="{Binding SelectItemsFromTextInputDelay}"
+              ObjectToStringComparer=""
               Separator=", "
               PlaceholderText="Select frameworks…"/>
         </StackPanel>

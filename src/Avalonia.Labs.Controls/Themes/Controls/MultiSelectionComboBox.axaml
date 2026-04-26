@@ -124,6 +124,7 @@
                 BasedOn="{StaticResource {x:Type TextBox}}">
     <Setter Property="Background"       Value="Transparent"/>
     <Setter Property="BorderThickness"  Value="0"/>
+    <Setter Property="MinHeight"        Value="0"/>
     <Setter Property="Padding"          Value="0"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
   </ControlTheme>
@@ -142,7 +143,7 @@
     <Setter Property="BorderThickness"            Value="1"/>
     <Setter Property="Foreground"                 Value="{DynamicResource MscbDropDownForeground}"/>
     <Setter Property="FocusAdorner"               Value="{x:Null}"/>
-
+    
     <Setter Property="Template">
       <ControlTemplate>
         <!--
@@ -241,6 +242,8 @@
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
     <Setter Property="KeyboardNavigation.TabNavigation"           Value="Once"/>
     <Setter Property="TextBoxTheme"          Value="{StaticResource MscbTextBoxTheme}"/>
+    <Setter Property="ObjectToStringComparer" Value="{x:Static controls:DefaultObjectToStringComparer.Instance}" />
+    <Setter Property="StringToObjectParser" Value="{x:Static controls:DefaultStringToObjectParser.Instance}" />
     <Setter Property="SelectedItemsItemPanel">
       <ItemsPanelTemplate>
         <WrapPanel/>
@@ -460,17 +463,7 @@
     <Style Selector="^:not(:editable):multiple:has-selections /template/ ItemsControl#PART_SelectedItemsPresenter">
       <Setter Property="IsVisible" Value="True"/>
     </Style>
-
-    <!-- Editable + multiple + has selections + no custom text → chips overlay (TextBox hidden behind) -->
-    <Style Selector="^:editable:multiple:has-selections:not(:has-custom-text) /template/ ItemsControl#PART_SelectedItemsPresenter">
-      <Setter Property="IsVisible" Value="True"/>
-    </Style>
-    <!-- Hide the TextBox visually while chips act as the display; keep Opacity (not
-         IsVisible) so the TextBox remains focusable and key events still reach it. -->
-    <Style Selector="^:editable:multiple:has-selections:not(:has-custom-text) /template/ TextBox#PART_EditableTextBox">
-      <Setter Property="Opacity" Value="0"/>
-    </Style>
-
+    
     <!-- Non-editable + single + has selection → content presenter -->
     <Style Selector="^:not(:editable):not(:multiple):has-selections /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="IsVisible" Value="True"/>

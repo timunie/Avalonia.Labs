@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Avalonia.Labs.Catalog.Views;
 using Avalonia.Labs.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,15 +16,36 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
     public MultiSelectionComboBoxViewModel()
     {
         Title = "MultiSelectionComboBox";
+        
+        SelectedFrameworks.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems is not null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Added: {item}");
+                }
+            }
+
+            if (e.OldItems is not null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Removed: {item}");
+                }
+            }
+        };
     }
 
-    public IReadOnlyList<string> Frameworks { get; } =
+    public ObservableCollection<string> Frameworks { get; } =
     [
         "Avalonia UI", "Blazor", "Flutter", "Ionic",
         "Jetpack Compose", "MAUI", ".NET MAUI", "React Native",
         "SwiftUI", "Uno Platform", "WPF", "WinUI 3",
         "Xamarin", "Angular", "Vue.js", "Svelte",
     ];
+    
+    public ObservableCollection<string> SelectedFrameworks { get; } = new();
 
     public IReadOnlyList<SelectedItemsOrderType> OrderTypes { get; } = System.Enum.GetValues<SelectedItemsOrderType>();
 
@@ -33,7 +55,7 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
     [ObservableProperty] public partial int  MaxSelectedItems { get; set; } = -1;
 
     [ObservableProperty] public partial SelectedItemsOrderType OrderSelectedItemsBy    { get; set; } = SelectedItemsOrderType.SelectedOrder;
-    [ObservableProperty] public partial int  SelectItemsFromTextInputDelay             { get; set; } = -1;
+    [ObservableProperty] public partial int  SelectItemsFromTextInputDelay             { get; set; } = 200;
     [ObservableProperty] public partial bool InterceptKeyboardSelection                { get; set; } = true;
     [ObservableProperty] public partial bool InterceptMouseWheelSelection              { get; set; } = true;
 }
