@@ -90,6 +90,9 @@ public class MultiSelectionComboBox : ListBox
             s.UpdateHasSelectionsPseudoClass();
             Dispatcher.UIThread.Post(() =>
             {
+                // Skip if we are in the middle of a DataContext swap; OnDataContextEndUpdate
+                // will do the clean refresh once all bound properties have settled.
+                if (s._isDataContextUpdating) return;
                 s.UpdateDisplaySelectedItems();
                 s.UpdateEditableText();
             }, DispatcherPriority.Loaded);
@@ -933,6 +936,14 @@ public class MultiSelectionComboBox : ListBox
                                 {
                                     foundItem = true;
                                     position++;
+                                }
+                                else // oldPosition < position: item was already placed earlier (duplicate token).
+                                {
+                                    // Treat the duplicate token as found so we don't attempt to
+                                    // add a new object via TryAddObjectFromString. We intentionally
+                                    // do NOT advance position so the duplicate doesn't reserve an
+                                    // extra slot in the ordered list.
+                                    foundItem = true;
                                 }
 
                                 if (foundItem) break;

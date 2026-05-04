@@ -1056,4 +1056,251 @@ public class MultiSelectionComboBoxTests
         public string? Text { get; set; }
         public ObservableCollection<object>? SelectedItems { get; set; }
     }
+
+    // ─── DataContext swap – extended scenarios ────────────────────────────────
+
+    /// <summary>
+    /// Single-mode equivalent of the DataContext swap test. Goes through a different code
+    /// path in DoSelectItemsFromText (sets SelectedItem rather than manipulating SelectedItems).
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_SingleMode_SelectsItemFromNewVmText()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, Text = "Banana", SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Single,
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        Assert.Equal("Banana", mscb.SelectedItem);
+    }
+
+    /// <summary>
+    /// <see cref="Controls.MultiSelectionComboBox.SelectItemsFromTextInputDelay"/> defaults to -1,
+    /// which disables auto-selection during typing. DataContext swap must still drive selection
+    /// synchronously — the delay flag only controls the typing debounce, not the VM-swap path.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_DefaultDelay_StillSelectsItemsFromText()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, Text = "Apple, Cherry", SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            // SelectItemsFromTextInputDelay is left at its default of -1
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Apple", selectedTexts);
+        Assert.Contains("Cherry", selectedTexts);
+    }
+
+    /// <summary>
+    /// <see cref="Controls.MultiSelectionComboBox.IsReadOnly"/> prevents the user from typing but
+    /// must NOT block DataContext-swap-driven selection — a VM change is not user input.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_IsReadOnly_StillSelectsItemsFromText()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, Text = "Cherry", SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            IsReadOnly = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Cherry", selectedTexts);
+    }
+
+    /// <summary>
+    /// When the new VM has null/empty Text and empty SelectedItems, the DataContext swap
+    /// should result in no selection and no custom text.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_NewVmHasNullText_ResultsInEmptySelection()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        Assert.Empty(mscb.SelectedItems!);
+        Assert.False(mscb.HasCustomText);
+    }
+
+    // ─── Duplicate tokens ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// When Text contains a duplicate token (e.g. "Apple, Apple"), the item must be selected
+    /// exactly once. Previously the second occurrence triggered the unhandled
+    /// <c>oldPosition &lt; position</c> path, which called <c>TryAddObjectFromString</c> and
+    /// could add a duplicate to the source list when a parser was configured.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task ForceItemsSelection_DuplicateToken_SelectsItemOnce()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Text = "Apple, Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Apple must appear exactly once in SelectedItems.
+        var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Single(selected, s => s == "Apple");
+    }
+
+    /// <summary>
+    /// Same as above but with a <see cref="Controls.DefaultStringToObjectParser"/> configured.
+    /// The duplicate token must NOT cause a second "Apple" to be added to the source list.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task ForceItemsSelection_DuplicateToken_WithParser_DoesNotAddDuplicate()
+    {
+        var items = new ObservableCollection<string> { "Apple", "Banana" };
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = items;
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.StringToObjectParser = DefaultStringToObjectParser.Instance;
+        });
+
+        mscb.Text = "Apple, Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.ForceItemsSelection();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Source must not gain a second "Apple".
+        Assert.Equal(2, items.Count); // still just Apple + Banana
+        var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Single(selected, s => s == "Apple");
+    }
+
+    // ─── Separator change ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Changing <see cref="Controls.MultiSelectionComboBox.Separator"/> at runtime must update
+    /// the displayed text of already-selected items.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task SeparatorChange_UpdatesDisplayedText()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+        });
+
+        mscb.Selection.Select(0);
+        mscb.Selection.Select(1);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Apple, Banana", mscb.GetSelectedItemsText());
+
+        mscb.Separator = " | ";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Apple | Banana", mscb.GetSelectedItemsText());
+    }
+
+    // ─── :has-selections pseudoclass – Single mode ───────────────────────────
+
+    [AvaloniaFact]
+    public async Task Pseudoclass_HasSelections_TracksSelectedItem_InSingleMode()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.SelectionMode = SelectionMode.Single;
+            m.ItemsSource = new List<string> { "Apple", "Banana" };
+        });
+
+        Assert.DoesNotContain(":has-selections", mscb.Classes);
+
+        mscb.SelectedItem = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Contains(":has-selections", mscb.Classes);
+
+        mscb.SelectedItem = null;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.DoesNotContain(":has-selections", mscb.Classes);
+    }
 }
