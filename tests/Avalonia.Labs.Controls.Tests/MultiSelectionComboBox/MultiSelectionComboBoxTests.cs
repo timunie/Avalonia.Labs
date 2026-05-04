@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -827,5 +828,79 @@ public class MultiSelectionComboBoxTests
 
         Assert.DoesNotContain("Apple", mscb.SelectedItems!.Cast<object>());
         Assert.Contains("Cherry", mscb.SelectedItems!.Cast<object>());
+    }
+
+    // ─── DataContext switch inside DataTemplate ───────────────────────────────
+
+    /// <summary>
+    /// Regression test: a ContentControl whose DataTemplate contains a MultiSelectionComboBox.
+    /// The user types text into the MSCB while VM1 is active, then clicks a different item in
+    /// the left-hand list — the ContentControl swaps its DataContext to VM2, which already has
+    /// a <c>Text</c> that should map to a specific selection.
+    ///
+    /// The fix must be synchronous: no extra dispatcher pumps are allowed after the DataContext
+    /// swap, because in real usage the user simply clicks and moves on.  The selection must be
+    /// driven inside <c>OnDataContextEndUpdate</c> itself, not deferred to a background timer.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_ViaContentControl_SelectsItemsFromNewVmText()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        // VM1: user had typed "Banana" — text is in the box but selection not yet committed.
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = "Banana",
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        // VM2: this VM's Text should drive the MSCB to select "Apple" and "Cherry".
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = "Apple, Cherry",
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            SelectItemsFromTextInputDelay = 0,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+
+        // One cycle so the control is fully loaded with VM1.
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // --- User clicks the second list item: DataContext swaps synchronously ---
+        mscb.DataContext = vm2;
+
+        // No extra dispatcher pumps. In real usage the user just clicks — there is no
+        // artificial background yield between the DataContext swap and the next interaction.
+        // Selection from Text must be driven synchronously inside OnDataContextEndUpdate.
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Apple", selectedTexts);
+        Assert.Contains("Cherry", selectedTexts);
+        Assert.DoesNotContain("Banana", selectedTexts);
+    }
+
+    private sealed class DataContextVm
+    {
+        public List<string>? Items { get; set; }
+        public string? Text { get; set; }
+        public ObservableCollection<object>? SelectedItems { get; set; }
     }
 }
