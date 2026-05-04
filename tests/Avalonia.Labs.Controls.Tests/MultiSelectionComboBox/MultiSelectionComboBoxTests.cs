@@ -897,6 +897,159 @@ public class MultiSelectionComboBoxTests
         Assert.DoesNotContain("Banana", selectedTexts);
     }
 
+    /// <summary>
+    /// Regression: when VM2 already has SelectedItems populated (e.g. the user visited before),
+    /// a DataContext swap must NOT overwrite those selections by re-parsing Text.
+    /// Text may represent custom/unconfirmed input from a prior visit; SelectedItems is the
+    /// authoritative state and must be preserved.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_NewVmHasExistingSelections_SelectionsArePreserved()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = null,
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        // VM2 has Cherry selected, but Text still shows "Apple" from previous custom input.
+        var vm2SelectedItems = new ObservableCollection<object> { "Cherry" };
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = "Apple",
+            SelectedItems = vm2SelectedItems,
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            SelectItemsFromTextInputDelay = 0,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        // Cherry must still be selected — "Apple" from Text must not clobber it.
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Cherry", selectedTexts);
+        Assert.DoesNotContain("Apple", selectedTexts);
+    }
+
+    /// <summary>
+    /// When a case-sensitive <see cref="StringComparison"/> is configured, text that differs
+    /// only in case must NOT match and therefore must not drive a selection on DataContext swap.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_CaseSensitiveComparison_DoesNotSelectCaseMismatch()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = null,
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        // Text is lowercase — should NOT match "Apple" under Ordinal comparison.
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = "apple",
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            EditableTextStringComparision = StringComparison.Ordinal,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        Assert.Empty(mscb.SelectedItems!);
+    }
+
+    /// <summary>
+    /// Complementary to the above: with case-insensitive comparison (the default), the same
+    /// lowercase text MUST select the matching item.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_CaseInsensitiveComparison_SelectsCaseMismatch()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = null,
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = "apple",  // lowercase — matches under OrdinalIgnoreCase
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            EditableTextStringComparision = StringComparison.OrdinalIgnoreCase,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Apple", selectedTexts);
+    }
+
     private sealed class DataContextVm
     {
         public List<string>? Items { get; set; }

@@ -1215,7 +1215,17 @@ public class MultiSelectionComboBox : ListBox
             // so the auto-select timer was never started for the new VM's Text.
             // Run the selection logic synchronously now so items are selected immediately,
             // without requiring a dispatcher pump (e.g. user switched VM via a ListBox click).
-            if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+            //
+            // Guard: only run when the new VM has no pre-existing selection.
+            // If SelectedItems is already populated we trust those items — the Text may
+            // represent custom/unconfirmed input from a previous visit and overwriting
+            // a bound selection list would corrupt the VM's state.
+            var hasExistingSelection = SelectionMode.HasFlag(SelectionMode.Multiple)
+                ? SelectedItems?.Count > 0
+                : SelectedItem is not null;
+
+            if (!hasExistingSelection &&
+                (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
                 (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
             {
                 _shouldDoTextReset = true;
