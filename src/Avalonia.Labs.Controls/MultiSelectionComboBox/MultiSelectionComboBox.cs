@@ -869,8 +869,13 @@ public class MultiSelectionComboBox : ListBox
     private void UpdateSelectedItemsFromTextTimer_Tick(object? sender, EventArgs e)
     {
         _updateSelectedItemsFromTextTimer?.Stop();
+        DoSelectItemsFromText();
+    }
 
-        // No need to update Selection if selection matches text already
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
+    private void DoSelectItemsFromText()
+    {
         if (Text == GetSelectedItemsText())
         {
             return;
@@ -1205,10 +1210,20 @@ public class MultiSelectionComboBox : ListBox
             // the stale HasCustomText and potentially overwrite the new VM's bound Text.
             UpdateHasCustomText(null);
             UpdateEditableText();
+
+            // The Text property change was suppressed while _isDataContextUpdating was true,
+            // so the auto-select timer was never started for the new VM's Text.
+            // Run the selection logic synchronously now so items are selected immediately,
+            // without requiring a dispatcher pump (e.g. user switched VM via a ListBox click).
+            if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+                (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            {
+                _shouldDoTextReset = true;
+                _shouldAddItems = true;
+                _updateSelectedItemsFromTextTimer?.Stop();
+                DoSelectItemsFromText();
+            }
         }
-        // Note: SelectItemsFromText is intentionally NOT called here.
-        // Calling it could parse the new VM's Text and silently overwrite its SelectedItems
-        // if the text doesn't match any item in the new context.
     }
 
     private void PART_PopupOnGotFocus(object? sender, FocusChangedEventArgs e)
