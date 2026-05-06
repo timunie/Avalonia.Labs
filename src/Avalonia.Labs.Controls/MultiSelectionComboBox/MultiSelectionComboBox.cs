@@ -90,9 +90,10 @@ public class MultiSelectionComboBox : ListBox
             s.UpdateHasSelectionsPseudoClass();
             Dispatcher.UIThread.Post(() =>
             {
-                // Skip if we are in the middle of a DataContext swap; OnDataContextEndUpdate
-                // will do the clean refresh once all bound properties have settled.
-                if (s._isDataContextUpdating) return;
+                // Skip if the control is unloaded or in the middle of a DataContext swap;
+                // OnDataContextEndUpdate will do the clean refresh once all bound properties
+                // have settled.
+                if (!s.IsLoaded || s._isDataContextUpdating) return;
                 s.UpdateDisplaySelectedItems();
                 s.UpdateEditableText();
             }, DispatcherPriority.Loaded);
@@ -652,42 +653,47 @@ public class MultiSelectionComboBox : ListBox
         }
 
         _isTextChanging = true;
-
-        var oldSelectionStart = PART_EditableTextBox.SelectionStart;
-        var oldSelectionEnd = PART_EditableTextBox.SelectionEnd;
-        var oldTextLength = PART_EditableTextBox.Text?.Length ?? 0;
-
-        var selectedItemsText = GetSelectedItemsText();
-
-        if (!HasCustomText)
+        try
         {
-            SetCurrentValue(TextProperty, selectedItemsText);
-        }
+            var oldSelectionStart = PART_EditableTextBox.SelectionStart;
+            var oldSelectionEnd = PART_EditableTextBox.SelectionEnd;
+            var oldTextLength = PART_EditableTextBox.Text?.Length ?? 0;
 
-        if (oldSelectionStart == 0 &&
-            oldSelectionEnd == oldTextLength) // We had all Text selected, so we select all again
-        {
-            PART_EditableTextBox.SelectAll();
-        }
-        else if
-            (oldSelectionStart ==
-             oldTextLength) // we had the cursor at the last position, so we move the cursor to the end again
-        {
-            PART_EditableTextBox.SelectionStart = PART_EditableTextBox.Text?.Length ?? 0;
-        }
-        else // we restore the old selection
-        {
-            PART_EditableTextBox.SelectionStart = oldSelectionStart;
-            PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
-        }
+            var selectedItemsText = GetSelectedItemsText();
 
-        var prevHasCustomText = HasCustomText;
-        UpdateHasCustomText(selectedItemsText);
-        // If the user's typed text was just matched to selections, select the result so
-        // the user can immediately replace or confirm it without repositioning the cursor.
-        if (prevHasCustomText && !HasCustomText)
-            PART_EditableTextBox.SelectAll();
-        _isTextChanging = false;
+            if (!HasCustomText)
+            {
+                SetCurrentValue(TextProperty, selectedItemsText);
+            }
+
+            if (oldSelectionStart == 0 &&
+                oldSelectionEnd == oldTextLength) // We had all Text selected, so we select all again
+            {
+                PART_EditableTextBox.SelectAll();
+            }
+            else if
+                (oldSelectionStart ==
+                 oldTextLength) // we had the cursor at the last position, so we move the cursor to the end again
+            {
+                PART_EditableTextBox.SelectionStart = PART_EditableTextBox.Text?.Length ?? 0;
+            }
+            else // we restore the old selection
+            {
+                PART_EditableTextBox.SelectionStart = oldSelectionStart;
+                PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
+            }
+
+            var prevHasCustomText = HasCustomText;
+            UpdateHasCustomText(selectedItemsText);
+            // If the user's typed text was just matched to selections, select the result so
+            // the user can immediately replace or confirm it without repositioning the cursor.
+            if (prevHasCustomText && !HasCustomText)
+                PART_EditableTextBox.SelectAll();
+        }
+        finally
+        {
+            _isTextChanging = false;
+        }
     }
 
     private void UpdateDisplaySelectedItems()
@@ -749,29 +755,25 @@ public class MultiSelectionComboBox : ListBox
         return _cachedBindingEvaluator ??= BindingEvaluator.TryCreate(DisplayMemberBinding);
     }
 
-    private sealed class BindingEvaluator : IDisposable
+    private sealed class BindingEvaluator : StyledElement, IDisposable
     {
-        private readonly ContentControl _host;
-        private readonly IDisposable? _subscription;
+        private static readonly StyledProperty<object?> s_valueProperty =
+            AvaloniaProperty.Register<BindingEvaluator, object?>("Value");
 
-        private BindingEvaluator(ContentControl host, IDisposable? subscription)
-        {
-            _host = host;
-            _subscription = subscription;
-        }
+        private IDisposable? _subscription;
 
         public static BindingEvaluator? TryCreate(BindingBase? binding)
         {
             if (binding is null) return null;
-            var host = new ContentControl();
-            var sub = host.Bind(ContentControl.ContentProperty, binding);
-            return new BindingEvaluator(host, sub);
+            var evaluator = new BindingEvaluator();
+            evaluator._subscription = evaluator.Bind(s_valueProperty, binding);
+            return evaluator;
         }
 
         public string? Evaluate(object? source)
         {
-            _host.DataContext = source;
-            return _host.GetValue(ContentControl.ContentProperty)?.ToString();
+            DataContext = source;
+            return GetValue(s_valueProperty)?.ToString();
         }
 
         public void Dispose() => _subscription?.Dispose();
@@ -1182,6 +1184,9 @@ public class MultiSelectionComboBox : ListBox
             _updateSelectedItemsFromTextTimer.Tick -= UpdateSelectedItemsFromTextTimer_Tick;
             _updateSelectedItemsFromTextTimer = null;
         }
+
+        _cachedBindingEvaluator?.Dispose();
+        _cachedBindingEvaluator = null;
 
         base.OnDetachedFromVisualTree(e);
     }
