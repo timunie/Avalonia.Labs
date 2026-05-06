@@ -1024,7 +1024,78 @@ public class MultiSelectionComboBoxTests
     }
 
     /// <summary>
-    /// When a case-sensitive <see cref="StringComparison"/> is configured, text that differs
+    /// Regression: a pending auto-select timer (started by LostFocus or an explicit
+    /// <see cref="Controls.MultiSelectionComboBox.ForceItemsSelection"/> call) must be
+    /// cancelled unconditionally in <c>OnDataContextBeginUpdate</c>.
+    ///
+    /// Previously the timer stop was only inside the <c>_isUserDefinedTextInputPending</c>
+    /// guard. When ForceItemsSelection started the timer (which does NOT set that flag),
+    /// the timer survived the DataContext swap and fired after EndUpdate with the new VM's
+    /// data — clobbering the new VM's pre-populated <c>SelectedItems</c>.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_PendingForceSelectionTimer_DoesNotClobberNewVmSelections()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        // VM1: typing is still pending.
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = "Banana",
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        // VM2: Cherry is already selected; Text = "Apple" is stale/custom input from a
+        // previous visit. The existing selection must survive the swap.
+        var vm2SelectedItems = new ObservableCollection<object> { "Cherry" };
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = "Apple",
+            SelectedItems = vm2SelectedItems,
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            // Disable the auto-select timer so we can start it manually below.
+            SelectItemsFromTextInputDelay = -1,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Simulate LostFocus / explicit commit: starts a 0 ms background timer WITHOUT
+        // setting _isUserDefinedTextInputPending. The old guard only stopped the timer
+        // when that flag was true, so the timer survived the DataContext swap.
+        mscb.ForceItemsSelection();
+
+        // Immediately swap — no dispatcher pump in between.
+        mscb.DataContext = vm2;
+
+        // Pump the background queue. Without the fix, the lingering timer fires here
+        // and calls DoSelectItemsFromText with vm2's Text = "Apple", replacing Cherry.
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selectedTexts = mscb.SelectedItems!.Cast<object>().Select(o => o!.ToString()).ToList();
+        Assert.Contains("Cherry", selectedTexts);
+        Assert.DoesNotContain("Apple", selectedTexts);
+    }
+
+
     /// only in case must NOT match and therefore must not drive a selection on DataContext swap.
     /// </summary>
     [AvaloniaFact]

@@ -1198,6 +1198,14 @@ public class MultiSelectionComboBox : ListBox
 
     protected override void OnDataContextBeginUpdate()
     {
+        // Always stop any pending auto-select timer before the bindings switch over.
+        // The timer may have been started by LostFocus, a long typing-delay, or an
+        // explicit ForceItemsSelection call.  Leaving it running past EndUpdate would
+        // cause it to fire with the NEW VM's data and potentially clobber pre-populated
+        // selections on the new VM (the EndUpdate timer-stop is inside the
+        // !hasExistingSelection guard and is therefore skipped in that case).
+        _updateSelectedItemsFromTextTimer?.Stop();
+
         // Synchronously commit any pending user-typed text to the current VM's selections
         // before the DataContext bindings change. A timer-based approach is too late:
         // OnDataContextEndUpdate stops the timer and the old VM never receives the committed
@@ -1209,7 +1217,6 @@ public class MultiSelectionComboBox : ListBox
         {
             _shouldDoTextReset = true;
             _shouldAddItems = true;
-            _updateSelectedItemsFromTextTimer?.Stop();
             DoSelectItemsFromText();
         }
         // Suppress intermediate OnPropertyChanged effects while bound properties are
