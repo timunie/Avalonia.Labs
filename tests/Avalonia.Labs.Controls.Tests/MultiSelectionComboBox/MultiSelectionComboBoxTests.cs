@@ -833,7 +833,78 @@ public class MultiSelectionComboBoxTests
     // ─── DataContext switch inside DataTemplate ───────────────────────────────
 
     /// <summary>
-    /// Regression test: a ContentControl whose DataTemplate contains a MultiSelectionComboBox.
+    /// Regression: when the user has typed text (e.g. "Apple, Cherry") but the
+    /// auto-selection delay has not yet fired, a DataContext swap — e.g. triggered
+    /// by a button click that switches the master-detail ViewModel — must commit the
+    /// typed text to selections on the OLD ViewModel <em>before</em> the bindings
+    /// switch over to the new one.
+    ///
+    /// Previously, <c>OnDataContextBeginUpdate</c> started a background timer for this
+    /// commit, but that timer was always stopped by <c>OnDataContextEndUpdate</c>, so
+    /// the old VM never received the selections. The fix calls
+    /// <c>DoSelectItemsFromText</c> synchronously inside <c>OnDataContextBeginUpdate</c>.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_ViaButtonClick_CommitsTypedTextToOldVmBeforeSwap()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1SelectedItems = new ObservableCollection<object>();
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            Text = null,
+            SelectedItems = vm1SelectedItems,
+        };
+
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            Text = null,
+            SelectedItems = new ObservableCollection<object>(),
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+            // Disable the auto-select timer so the selection stays pending.
+            SelectItemsFromTextInputDelay = -1,
+        };
+        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+            new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Simulate user typing "Apple, Cherry" — the auto-select timer is disabled,
+        // so the selection is still pending (_isUserDefinedTextInputPending == true).
+        mscb.Text = "Apple, Cherry";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Nothing should be selected yet.
+        Assert.Empty(vm1SelectedItems);
+
+        // --- User clicks a button that swaps the DataContext ---
+        mscb.DataContext = vm2;
+
+        // The commit must happen synchronously inside OnDataContextBeginUpdate,
+        // so vm1SelectedItems is populated without any additional dispatcher pump.
+        var vm1Selected = vm1SelectedItems.Cast<object>().Select(o => o!.ToString()).ToList();
+        Assert.Contains("Apple", vm1Selected);
+        Assert.Contains("Cherry", vm1Selected);
+        Assert.DoesNotContain("Banana", vm1Selected);
+    }
+
+
     /// The user types text into the MSCB while VM1 is active, then clicks a different item in
     /// the left-hand list — the ContentControl swaps its DataContext to VM2, which already has
     /// a <c>Text</c> that should map to a specific selection.

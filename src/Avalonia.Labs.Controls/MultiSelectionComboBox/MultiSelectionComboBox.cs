@@ -1198,9 +1198,20 @@ public class MultiSelectionComboBox : ListBox
 
     protected override void OnDataContextBeginUpdate()
     {
-        // Best-effort: commit any pending text-based selection changes while still on the old
-        // DataContext. The timer fires asynchronously, so this is not a strict guarantee.
-        SelectItemsFromText(0);
+        // Synchronously commit any pending user-typed text to the current VM's selections
+        // before the DataContext bindings change. A timer-based approach is too late:
+        // OnDataContextEndUpdate stops the timer and the old VM never receives the committed
+        // selections. We call DoSelectItemsFromText() directly here, while all bound
+        // properties (ItemsSource, Text, SelectedItems) still point to the OLD ViewModel.
+        if (_isUserDefinedTextInputPending && !_isTextChanging &&
+            (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+        {
+            _shouldDoTextReset = true;
+            _shouldAddItems = true;
+            _updateSelectedItemsFromTextTimer?.Stop();
+            DoSelectItemsFromText();
+        }
         // Suppress intermediate OnPropertyChanged effects while bound properties are
         // settling to their new values; we do a single clean refresh in EndUpdate.
         _isDataContextUpdating = true;
