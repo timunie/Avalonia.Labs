@@ -22,6 +22,9 @@ using Avalonia.VisualTree;
 
 namespace Avalonia.Labs.Controls;
 
+/// <summary>
+/// A control that allows users to select multiple items from a list. Also supports an editable mode, where free text can be added.
+/// </summary>
 [TemplatePart(Name = nameof(PART_Popup), Type = typeof(Popup))]
 [TemplatePart(Name = nameof(PART_SelectedItemsPresenter), Type = typeof(ItemsControl))]
 [TemplatePart(Name = nameof(PART_ItemsPresenter), Type = typeof(ItemsPresenter))]
@@ -53,13 +56,8 @@ public class MultiSelectionComboBox : ListBox
 
     private bool _isUserDefinedTextInputPending;
 
-    private bool
-        _isTextChanging; // This flag indicates if the text is changed by us, so we don't want to re-fire the TextChangedEvent.
-
-    private bool _shouldDoTextReset; // Defines if the Text should be reset after selecting items from string
-
-    private bool
-        _shouldAddItems; // Defines if the MultiSelectionComboBox should add new items from text input. Don't set this to true while input is pending. We cannot know how long the user needs for typing.
+    // This flag indicates if the text is changed by us, so we don't want to re-fire the TextChangedEvent.
+    private bool _isTextChanging; 
 
     private DispatcherTimer? _updateSelectedItemsFromTextTimer;
 
@@ -75,6 +73,7 @@ public class MultiSelectionComboBox : ListBox
     // 
     //-------------------------------------------------------------------
 
+    /// <inheritdoc />
     public MultiSelectionComboBox()
     {
         _removeSelectedItemCommand = new Command(param => RemoveItem(param));
@@ -701,6 +700,11 @@ public class MultiSelectionComboBox : ListBox
         UpdateDisplaySelectedItems(OrderSelectedItemsBy);
     }
 
+    /// <summary>
+    /// Gets the string representation of the selected items.
+    /// </summary>
+    /// <returns>the string representation of the selected items</returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public string? GetSelectedItemsText()
     {
         if (SelectionMode.HasFlag(SelectionMode.Multiple) && _displaySelectedItems is not null)
@@ -809,7 +813,7 @@ public class MultiSelectionComboBox : ListBox
     }
 
     /// <summary>
-    /// Returns <see cref="SelectedItems"/> ordered by their position in <see cref="ItemsControl.Items"/>,
+    /// Returns <see cref="ListBox.SelectedItems"/> ordered by their position in <see cref="ItemsControl.Items"/>,
     /// using a pre-built index map to avoid an O(n²) scan.
     /// </summary>
     private IEnumerable<object>? GetItemsSourceOrdered()
@@ -833,22 +837,24 @@ public class MultiSelectionComboBox : ListBox
     /// </summary>
     public void ForceItemsSelection()
     {
-        SelectItemsFromText(0);
+        DoSelectItemsFromText(true);
     }
 
     private void SelectItemsFromText(int millisecondsToWait)
     {
-        if ((millisecondsToWait != 0 && !_isUserDefinedTextInputPending)
-            || _isTextChanging
-            || IsReadOnly)
+        // If milliseconds to wait is negative or text is changing do nothing.
+        if (millisecondsToWait < 0 || _isTextChanging)
         {
             return;
         }
 
-        // We want to do a text reset or add items only if we don't need to wait for more input. 
-        _shouldDoTextReset = millisecondsToWait == 0;
-        _shouldAddItems = millisecondsToWait == 0;
-
+        // Select the items from the text input directly if milliseconds to wait is 0.
+        if (millisecondsToWait == 0 && _isUserDefinedTextInputPending)
+        {
+            DoSelectItemsFromText(true);
+            return;
+        }
+        
         if (_updateSelectedItemsFromTextTimer is null)
         {
             _updateSelectedItemsFromTextTimer = new DispatcherTimer(DispatcherPriority.Background);
@@ -864,27 +870,38 @@ public class MultiSelectionComboBox : ListBox
             (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
         {
             _updateSelectedItemsFromTextTimer.Interval =
-                TimeSpan.FromMilliseconds(millisecondsToWait > 0 ? millisecondsToWait : 0);
+                TimeSpan.FromMilliseconds(millisecondsToWait);
             _updateSelectedItemsFromTextTimer.Start();
         }
     }
 
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067",
+        Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
     private void UpdateSelectedItemsFromTextTimer_Tick(object? sender, EventArgs e)
     {
-        _updateSelectedItemsFromTextTimer?.Stop();
         DoSelectItemsFromText();
     }
 
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
-    private void DoSelectItemsFromText()
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067",
+        Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
+    private void DoSelectItemsFromText(bool forceUpdate = false)
     {
-        if (Text == GetSelectedItemsText())
+        // Ensure the timer is stopped.
+        _updateSelectedItemsFromTextTimer?.Stop();
+
+        // We only update the selected items if the control is editable and not read-only as well as if the text has
+        // changes compared to the selected items.
+        if (!IsEditable || IsReadOnly || Text == GetSelectedItemsText())
         {
             return;
         }
+
+        var shouldDoTextReset = forceUpdate;
+        var shouldAddItems = forceUpdate;
 
         // We clear the selection if there is no text available. 
         if (string.IsNullOrEmpty(Text))
@@ -897,9 +914,9 @@ public class MultiSelectionComboBox : ListBox
 
         if (SelectionMode.HasFlag(SelectionMode.Multiple) && SelectedItems is not null)
         {
-            var strings = !string.IsNullOrEmpty(Separator)
-                ? Text?.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries)
-                : null;
+            var strings = !string.IsNullOrEmpty(Separator) ?
+                Text?.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries) :
+                null;
 
             int position = 0;
 
@@ -955,14 +972,14 @@ public class MultiSelectionComboBox : ListBox
 
                     if (!foundItem)
                     {
-                        if (_shouldAddItems && TryAddObjectFromString(stringObject, out var result))
+                        if (shouldAddItems && TryAddObjectFromString(stringObject, out var result))
                         {
                             SelectedItems.Insert(position, result);
                             position++;
                         }
                         else
                         {
-                            _shouldDoTextReset = false;
+                            shouldDoTextReset = false;
                         }
                     }
                 }
@@ -996,13 +1013,13 @@ public class MultiSelectionComboBox : ListBox
             if (!foundItem)
             {
                 // We try to add a new item. If we were able to do so we need to update the text as it may differ. 
-                if (_shouldAddItems && TryAddObjectFromString(Text, out var result))
+                if (shouldAddItems && TryAddObjectFromString(Text, out var result))
                 {
                     SetCurrentValue(SelectedItemProperty, result);
                 }
                 else
                 {
-                    _shouldDoTextReset = false; // We did not find the needed item so we should not do the text reset.
+                    shouldDoTextReset = false; // We did not find the needed item so we should not do the text reset.
                 }
             }
         }
@@ -1021,7 +1038,7 @@ public class MultiSelectionComboBox : ListBox
         if (PART_EditableTextBox is not null)
         {
             // We do a text reset if all items were successfully found and we don't have to wait for more input.
-            if (_shouldDoTextReset)
+            if (shouldDoTextReset)
             {
                 // Force-reset the text (bypasses the IsKeyboardFocusWithin early-return
                 // inside UpdateEditableText) and select all so the user can see the match.
@@ -1035,14 +1052,18 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "elementType comes from GetElementType() which uses reflection; type information cannot be preserved.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "TypeDescriptor usage is guarded by the optional StringToObjectParser property.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2067",
+        Justification = "elementType comes from GetElementType(); annotating local variables is not possible.")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2072",
+        Justification =
+            "elementType comes from GetElementType() which uses reflection; type information cannot be preserved.")]
     private bool TryAddObjectFromString(string? input, out object? result)
     {
         try
         {
-            if (StringToObjectParser is null || !_shouldAddItems)
+            if (StringToObjectParser is null)
             {
                 result = null;
                 return false;
@@ -1091,9 +1112,11 @@ public class MultiSelectionComboBox : ListBox
             return false;
         }
     }
-
-
-    // Clear Text Command
+    
+    /// <summary>
+    /// If the control has custom text, it will be reset to the selected items text.
+    /// Otherwise the text and selected items will be cleared.
+    /// </summary>
     public void Clear()
     {
         if (HasCustomText)
@@ -1108,6 +1131,10 @@ public class MultiSelectionComboBox : ListBox
     }
 
 
+    /// <summary>
+    /// Removes the specified item from the selection.
+    /// </summary>
+    /// <param name="item">the item to remove</param>
     public void RemoveItem(object? item)
     {
         if (item is null) return;
@@ -1123,6 +1150,7 @@ public class MultiSelectionComboBox : ListBox
     }
 
 
+    /// <inheritdoc />
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         if (PART_EditableTextBox != null)
@@ -1169,13 +1197,14 @@ public class MultiSelectionComboBox : ListBox
         {
             PART_ClearButton.Click += PART_ClearButtonOnClick;
         }
-        
+
         UpdateHasCustomText(null);
         PseudoClasses.Set(s_pcEditable, IsEditable);
         PseudoClasses.Set(s_pcMultiple, SelectionMode.HasFlag(SelectionMode.Multiple));
         PseudoClasses.Set(s_pcHasCustomText, HasCustomText);
     }
 
+    /// <inheritdoc />
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_updateSelectedItemsFromTextTimer is not null)
@@ -1191,6 +1220,7 @@ public class MultiSelectionComboBox : ListBox
         base.OnDetachedFromVisualTree(e);
     }
 
+    /// <inheritdoc />
     protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
     {
         base.UpdateDataValidation(property, state, error);
@@ -1201,6 +1231,7 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    /// <inheritdoc />
     protected override void OnDataContextBeginUpdate()
     {
         // Always stop any pending auto-select timer before the bindings switch over.
@@ -1220,16 +1251,16 @@ public class MultiSelectionComboBox : ListBox
             (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
             (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
         {
-            _shouldDoTextReset = true;
-            _shouldAddItems = true;
-            DoSelectItemsFromText();
+            DoSelectItemsFromText(true);
         }
+
         // Suppress intermediate OnPropertyChanged effects while bound properties are
         // settling to their new values; we do a single clean refresh in EndUpdate.
         _isDataContextUpdating = true;
         base.OnDataContextBeginUpdate();
     }
 
+    /// <inheritdoc />
     protected override void OnDataContextEndUpdate()
     {
         base.OnDataContextEndUpdate();
@@ -1254,18 +1285,15 @@ public class MultiSelectionComboBox : ListBox
             // If SelectedItems is already populated we trust those items — the Text may
             // represent custom/unconfirmed input from a previous visit and overwriting
             // a bound selection list would corrupt the VM's state.
-            var hasExistingSelection = SelectionMode.HasFlag(SelectionMode.Multiple)
-                ? SelectedItems?.Count > 0
-                : SelectedItem is not null;
+            var hasExistingSelection = SelectionMode.HasFlag(SelectionMode.Multiple) ?
+                SelectedItems?.Count > 0 :
+                SelectedItem is not null;
 
             if (!hasExistingSelection &&
                 (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
                 (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
             {
-                _shouldDoTextReset = true;
-                _shouldAddItems = true;
-                _updateSelectedItemsFromTextTimer?.Stop();
-                DoSelectItemsFromText();
+                DoSelectItemsFromText(true);
             }
         }
     }
@@ -1291,8 +1319,8 @@ public class MultiSelectionComboBox : ListBox
     {
         switch (e.Key)
         {
-            case Key.Enter when IsEditable && !string.IsNullOrEmpty(Text):
-                SelectItemsFromText(0);
+            case Key.Enter when IsEditable && !string.IsNullOrEmpty(Text) && !AcceptsReturn:
+                DoSelectItemsFromText(true);
                 e.Handled = true;
                 break;
 
@@ -1325,10 +1353,10 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    /// <inheritdoc />
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (e is { Handled: false, Source: Visual src } &&
-            e.InitialPressMouseButton == MouseButton.Left)
+        if (e is { Handled: false, Source: Visual src, InitialPressMouseButton: MouseButton.Left })
         {
             if (PART_Popup?.IsInsidePopup(src) == true)
             {
@@ -1353,7 +1381,7 @@ public class MultiSelectionComboBox : ListBox
 
     private void PART_EditableTextBox_LostFocus(object? sender, RoutedEventArgs e)
     {
-        SelectItemsFromText(0);
+        DoSelectItemsFromText(true);
     }
 
     private void PART_ClearButtonOnClick(object? sender, RoutedEventArgs e)
@@ -1398,6 +1426,7 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    /// <inheritdoc />
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
@@ -1460,6 +1489,7 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    /// <inheritdoc />
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         base.OnGotFocus(e);
@@ -1482,11 +1512,13 @@ public class MultiSelectionComboBox : ListBox
         }
     }
 
+    /// <inheritdoc />
     protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
     {
         return new MultiSelectionComboBoxItem();
     }
 
+    /// <inheritdoc />
     protected override bool NeedsContainerOverride(object? item, int index, out object? recycleKey)
     {
         return NeedsContainer<MultiSelectionComboBoxItem>(item, out recycleKey);
