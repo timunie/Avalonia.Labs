@@ -873,11 +873,11 @@ public class MultiSelectionComboBoxTests
             // Disable the auto-select timer so the selection stays pending.
             SelectItemsFromTextInputDelay = -1,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -942,11 +942,11 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
             SelectItemsFromTextInputDelay = 0,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1003,11 +1003,11 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
             SelectItemsFromTextInputDelay = 0,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1025,7 +1025,7 @@ public class MultiSelectionComboBoxTests
 
     /// <summary>
     /// Regression: a pending auto-select timer (started by LostFocus or an explicit
-    /// <see cref="Controls.MultiSelectionComboBox.ForceItemsSelection"/> call) must be
+    /// <see cref="MultiSelectionComboBox.ForceItemsSelection"/> call) must be
     /// cancelled unconditionally in <c>OnDataContextBeginUpdate</c>.
     ///
     /// Previously the timer stop was only inside the <c>_isUserDefinedTextInputPending</c>
@@ -1065,11 +1065,11 @@ public class MultiSelectionComboBoxTests
             // Disable the auto-select timer so we can start it manually below.
             SelectItemsFromTextInputDelay = -1,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1126,11 +1126,11 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
             EditableTextStringComparision = StringComparison.Ordinal,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1174,11 +1174,11 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
             EditableTextStringComparision = StringComparison.OrdinalIgnoreCase,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty,
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty,
+        mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1219,7 +1219,7 @@ public class MultiSelectionComboBoxTests
             IsEditable = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
 
         mscb.DataContext = vm1;
@@ -1233,7 +1233,7 @@ public class MultiSelectionComboBoxTests
     }
 
     /// <summary>
-    /// <see cref="Controls.MultiSelectionComboBox.SelectItemsFromTextInputDelay"/> defaults to -1,
+    /// <see cref="MultiSelectionComboBox.SelectItemsFromTextInputDelay"/> defaults to -1,
     /// which disables auto-selection during typing. DataContext swap must still drive selection
     /// synchronously — the delay flag only controls the typing debounce, not the VM-swap path.
     /// </summary>
@@ -1253,9 +1253,9 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
             // SelectItemsFromTextInputDelay is left at its default of -1
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
         var window = new Window { Content = mscb, Width = 400, Height = 60 };
@@ -1270,7 +1270,7 @@ public class MultiSelectionComboBoxTests
     }
 
     /// <summary>
-    /// <see cref="Controls.MultiSelectionComboBox.IsReadOnly"/> prevents the user from typing but
+    /// <see cref="MultiSelectionComboBox.IsReadOnly"/> prevents the user from typing but
     /// must NOT block DataContext-swap-driven selection — a VM change is not user input.
     /// </summary>
     [AvaloniaFact]
@@ -1289,9 +1289,9 @@ public class MultiSelectionComboBoxTests
             IsReadOnly = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
         var window = new Window { Content = mscb, Width = 400, Height = 60 };
@@ -1323,9 +1323,9 @@ public class MultiSelectionComboBoxTests
             IsEditable = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
-        mscb.Bind(Controls.MultiSelectionComboBox.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
         mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
-        mscb.Bind(Controls.MultiSelectionComboBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
         var window = new Window { Content = mscb, Width = 400, Height = 60 };
@@ -1369,7 +1369,7 @@ public class MultiSelectionComboBoxTests
     }
 
     /// <summary>
-    /// Same as above but with a <see cref="Controls.DefaultStringToObjectParser"/> configured.
+    /// Same as above but with a <see cref="DefaultStringToObjectParser"/> configured.
     /// The duplicate token must NOT cause a second "Apple" to be added to the source list.
     /// </summary>
     [AvaloniaFact]
@@ -1399,7 +1399,7 @@ public class MultiSelectionComboBoxTests
     // ─── Separator change ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// Changing <see cref="Controls.MultiSelectionComboBox.Separator"/> at runtime must update
+    /// Changing <see cref="Separator"/> at runtime must update
     /// the displayed text of already-selected items.
     /// </summary>
     [AvaloniaFact]

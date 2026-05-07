@@ -893,15 +893,14 @@ public class MultiSelectionComboBox : ListBox
         // Ensure the timer is stopped.
         _updateSelectedItemsFromTextTimer?.Stop();
 
-        // We only update the selected items if the control is editable and not read-only as well as if the text has
+        // We only update the selected items from text has
         // changes compared to the selected items.
-        if (!IsEditable || IsReadOnly || Text == GetSelectedItemsText())
+        if (Text == GetSelectedItemsText())
         {
             return;
         }
 
         var shouldDoTextReset = forceUpdate;
-        var shouldAddItems = forceUpdate;
 
         // We clear the selection if there is no text available. 
         if (string.IsNullOrEmpty(Text))
@@ -972,7 +971,7 @@ public class MultiSelectionComboBox : ListBox
 
                     if (!foundItem)
                     {
-                        if (shouldAddItems && TryAddObjectFromString(stringObject, out var result))
+                        if (forceUpdate && TryAddObjectFromString(stringObject, out var result))
                         {
                             SelectedItems.Insert(position, result);
                             position++;
@@ -1013,7 +1012,7 @@ public class MultiSelectionComboBox : ListBox
             if (!foundItem)
             {
                 // We try to add a new item. If we were able to do so we need to update the text as it may differ. 
-                if (shouldAddItems && TryAddObjectFromString(Text, out var result))
+                if (forceUpdate && TryAddObjectFromString(Text, out var result))
                 {
                     SetCurrentValue(SelectedItemProperty, result);
                 }
