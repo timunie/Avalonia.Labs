@@ -539,6 +539,10 @@ public class MultiSelectionComboBox : ListBox
             PART_EditableTextBox.SelectionStart = oldSelectionStart;
             PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
         }
+        else
+        {
+            UpdateEditableText(forceUpdate);
+        }
     }
 
     /// <summary>
@@ -848,7 +852,14 @@ public class MultiSelectionComboBox : ListBox
     /// </summary>
     public void ForceItemsSelection()
     {
-        DoSelectItemsFromText(true);
+        // Guard matches all other DoSelectItemsFromText call sites: without a separator
+        // in multiple-selection mode, splitting Text is not defined and DoSelectItemsFromText
+        // would clear ALL selections (position stays 0, cleanup loop removes everything).
+        if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+        {
+            DoSelectItemsFromText(true);
+        }
     }
 
     private void SelectItemsFromText(int millisecondsToWait)
@@ -1059,6 +1070,14 @@ public class MultiSelectionComboBox : ListBox
             // If we have the KeyboardFocus we need to update the text later in order to not interrupt the user.
             // Therefor we connect this flag to the KeyboardFocus of the TextBox.
             _isUserDefinedTextInputPending = PART_EditableTextBox.IsKeyboardFocusWithin;
+        }
+        else
+        {
+            if (shouldDoTextReset)
+            {
+                ResetEditableText(true);
+            }
+            _isUserDefinedTextInputPending = false;
         }
     }
 
@@ -1410,7 +1429,14 @@ public class MultiSelectionComboBox : ListBox
 
     private void PART_EditableTextBox_LostFocus(object? sender, RoutedEventArgs e)
     {
-        DoSelectItemsFromText(true);
+        // Guard matches all other DoSelectItemsFromText call sites: without a separator
+        // in multiple-selection mode, splitting Text is not defined and DoSelectItemsFromText
+        // would clear ALL selections (position stays 0, cleanup loop removes everything).
+        if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+        {
+            DoSelectItemsFromText(true);
+        }
     }
 
     private void PART_ClearButtonOnClick(object? sender, RoutedEventArgs e)
