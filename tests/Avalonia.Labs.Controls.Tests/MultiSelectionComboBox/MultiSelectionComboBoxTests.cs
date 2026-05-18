@@ -1202,6 +1202,61 @@ public class MultiSelectionComboBoxTests
     // ─── DataContext swap – extended scenarios ────────────────────────────────
 
     /// <summary>
+    /// Regression: when the control is NOT editable and Text is not bound, switching to a
+    /// new DataContext that has an empty SelectedItems must clear the displayed selections.
+    ///
+    /// Previously, because <c>UpdateEditableText</c> exits early when there is no
+    /// <c>PART_EditableTextBox</c> (non-editable mode), the stale <c>HasCustomText</c> /
+    /// display state was never reset on DataContext swap, so the old VM's selections
+    /// continued to appear.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_UnboundText_NewVmHasEmptySelection_ClearsDisplay()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1SelectedItems = new ObservableCollection<object> { "Apple" };
+        var vm1 = new DataContextVm
+        {
+            Items = items,
+            SelectedItems = vm1SelectedItems,
+        };
+
+        var vm2SelectedItems = new ObservableCollection<object>(); // empty
+        var vm2 = new DataContextVm
+        {
+            Items = items,
+            SelectedItems = vm2SelectedItems,
+        };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false, // no text box; Text is intentionally NOT bound
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty,
+            new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty,
+            new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // VM1: Apple is selected.
+        Assert.Single(mscb.SelectedItems!);
+
+        // --- Switch to VM2 which has no selections ---
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Empty(mscb.SelectedItems!);
+        Assert.DoesNotContain(":has-selections", mscb.Classes);
+    }
+
+    /// <summary>
     /// Single-mode equivalent of the DataContext swap test. Goes through a different code
     /// path in DoSelectItemsFromText (sets SelectedItem rather than manipulating SelectedItems).
     /// </summary>
@@ -1395,6 +1450,353 @@ public class MultiSelectionComboBoxTests
         var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
         Assert.Single(selected, s => s == "Apple");
     }
+
+    // ─── DataContext swap – stale Text when Text is not bound ────────────────
+    //
+    // Two related bugs when Text is not data-bound:
+    //
+    // Bug A – "new VM has selections, Text stays null":
+    //   OnDataContextEndUpdate calls UpdateEditableText, but by that point the
+    //   selection model hasn't yet synced with the new SelectedItems collection, so
+    //   GetSelectedItemsText() returns null. The Loaded-priority post that would
+    //   later call UpdateEditableText again is suppressed while _isDataContextUpdating
+    //   is true, and no follow-up runs afterwards.
+    //
+    // Bug B – "stale Text survives swap to empty VM":
+    //   When Text was set (internally by UpdateEditableText or explicitly) before the
+    //   swap, UpdateHasCustomText in OnDataContextEndUpdate sees non-null Text vs
+    //   null selectedItemsText → HasCustomText = true → UpdateEditableText skips the
+    //   reset → the old Text remains.
+    // ─────────────────────────────────────────────────────────────────────────────────
+
+    // ── Bug A tests ──────────────────────────────────────────────────────────────────
+
+    // A-1. Non-editable, VM2 has a single pre-selected item.
+    //      Text must be updated to "Banana" after the swap.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_TextUnbound_Vm2HasSingleSelection_TextReflectsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Banana", mscb.Text);
+    }
+
+    // A-2. VM2 has multiple pre-selected items; Text must show them joined.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_TextUnbound_Vm2HasMultipleSelections_TextReflectsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple", "Cherry" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Apple, Cherry", mscb.Text);
+    }
+
+    // A-3. Single-selection mode: VM2 has one pre-selected item.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_SingleMode_TextUnbound_Vm2HasSelection_TextReflectsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Single,
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Banana", mscb.Text);
+    }
+
+    // A-4. SelectedItemStringFormat is active; VM2's selection must appear formatted.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_TextUnbound_WithStringFormat_Vm2HasSelection_TextReflectsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+            SelectedItemStringFormat = "({0})",
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("(Apple)", mscb.Text);
+    }
+
+    // A-5. Bindings registered in reverse order (SelectedItems before ItemsSource).
+    //      The Text-update failure must not depend on registration order.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_TextUnbound_ReverseBindingOrder_Vm2HasSelection_TextReflectsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        // Reverse order: SelectedItems registered before ItemsSource
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Banana", mscb.Text);
+    }
+
+    // ── Bug B tests ──────────────────────────────────────────────────────────────────
+    //
+    // For these tests Text is set explicitly (SetCurrentValue / direct assignment) before
+    // the swap to reliably produce the stale-Text state, without relying on the timing of
+    // the internal UpdateEditableText that fires via the Loaded-priority post.
+
+    // B-1. Text is set to "Apple" before the swap; VM2 has empty selections.
+    //      UpdateHasCustomText sees ("Apple" vs null) → HasCustomText = true → UpdateEditableText
+    //      skips the reset → Text stays "Apple" after the swap.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_StaleTextFromVm1_Vm2Empty_TextClears()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Simulate the internal state that UpdateEditableText produces when VM1 has selections.
+        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        Assert.Equal("Apple", mscb.Text); // sanity
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.True(string.IsNullOrEmpty(mscb.Text),
+            $"Expected Text null/empty after DC swap to empty VM, but got: \"{mscb.Text}\"");
+        Assert.False(mscb.HasCustomText);
+    }
+
+    // B-2. Text is "Apple, Banana"; VM2 has "Cherry" selected.
+    //      Text must be "Cherry" after the swap — not stay at the stale joined string.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_StaleTextFromVm1_Vm2HasSelection_TextFollowsNewVm()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Cherry" } };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple, Banana");
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.Equal("Cherry", mscb.Text);
+    }
+
+    // B-3. HasCustomText must be false after the swap to empty VM2 (same stale-Text scenario).
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_StaleTextFromVm1_Vm2Empty_HasCustomTextReset()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.False(mscb.HasCustomText);
+    }
+
+    // B-4. IsEditable = true, Text NOT bound: same stale-Text regression exists in editable mode.
+    [AvaloniaFact]
+    public async Task DataContextSwap_Editable_TextUnbound_StaleText_Vm2Empty_TextClears()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true, // editable but Text intentionally left unbound
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.True(string.IsNullOrEmpty(mscb.Text),
+            $"Expected Text null/empty (editable, Text unbound) after DC swap, but got: \"{mscb.Text}\"");
+    }
+
+    // B-5. ObjectToStringComparer is set: the stale Text ("Apple") must NOT cause
+    //      DoSelectItemsFromText to insert a spurious selection into VM2's empty collection.
+    //      Without the fix, hasExistingSelection=false → DoSelectItemsFromText runs → stale
+    //      "Apple" matches an item → vm2's collection is mutated.
+    [AvaloniaFact]
+    public async Task DataContextSwap_NonEditable_StaleText_WithComparer_Vm2Empty_NoUnwantedSelection()
+    {
+        var items = new List<string> { "Apple", "Banana" };
+
+        var vm2SelectedItems = new ObservableCollection<object>();
+        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = vm2SelectedItems };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = false,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // The stale "Apple" text must NOT cause DoSelectItemsFromText to populate VM2.
+        Assert.Empty(vm2SelectedItems);
+        Assert.True(string.IsNullOrEmpty(mscb.Text),
+            $"Expected Text null/empty after DC swap (comparer set), but got: \"{mscb.Text}\"");
+    }
+
+    // ─── Separator change ─────────────────────────────────────────────────────
 
     // ─── Separator change ─────────────────────────────────────────────────────
 
