@@ -63,6 +63,14 @@ public class MultiSelectionComboBox : ListBox
 
     private bool _isDataContextUpdating;
 
+    /// <summary>
+    /// Set to <see langword="true"/> when <see cref="TextProperty"/> is updated
+    /// by a binding (not by internal code) while <see cref="_isDataContextUpdating"/>
+    /// is active.  Used in <see cref="OnDataContextEndUpdate"/> to decide whether
+    /// stale <see cref="HasCustomText"/> should be cleared.
+    /// </summary>
+    private bool _textUpdatedByBindingDuringDcSwap;
+
     private BindingEvaluator? _cachedBindingEvaluator;
 
     private readonly Command _removeSelectedItemCommand;
@@ -84,7 +92,7 @@ public class MultiSelectionComboBox : ListBox
         FocusableProperty.OverrideDefaultValue<MultiSelectionComboBox>(true);
 
         // Listen for SelectionChanges
-        SelectionChangedEvent.AddClassHandler<MultiSelectionComboBox>((s, _) =>
+        SelectionChangedEvent.AddClassHandler<MultiSelectionComboBox>((s, e) =>
         {
             s.UpdateHasSelectionsPseudoClass();
             Dispatcher.UIThread.Post(() =>
@@ -646,7 +654,7 @@ public class MultiSelectionComboBox : ListBox
     /// </summary> 
     private void UpdateEditableText(bool forceUpdate = false)
     {
-        if (!IsLoaded || PART_EditableTextBox is null || (PART_EditableTextBox.IsKeyboardFocusWithin && !forceUpdate))
+        if (!IsLoaded || (PART_EditableTextBox is not null && PART_EditableTextBox.IsKeyboardFocusWithin && !forceUpdate))
         {
             return;
         }
@@ -654,10 +662,6 @@ public class MultiSelectionComboBox : ListBox
         _isTextChanging = true;
         try
         {
-            var oldSelectionStart = PART_EditableTextBox.SelectionStart;
-            var oldSelectionEnd = PART_EditableTextBox.SelectionEnd;
-            var oldTextLength = PART_EditableTextBox.Text?.Length ?? 0;
-
             var selectedItemsText = GetSelectedItemsText();
 
             if (!HasCustomText)
@@ -665,21 +669,28 @@ public class MultiSelectionComboBox : ListBox
                 SetCurrentValue(TextProperty, selectedItemsText);
             }
 
-            if (oldSelectionStart == 0 &&
-                oldSelectionEnd == oldTextLength) // We had all Text selected, so we select all again
+            if (PART_EditableTextBox is not null)
             {
-                PART_EditableTextBox.SelectAll();
-            }
-            else if
-                (oldSelectionStart ==
-                 oldTextLength) // we had the cursor at the last position, so we move the cursor to the end again
-            {
-                PART_EditableTextBox.SelectionStart = PART_EditableTextBox.Text?.Length ?? 0;
-            }
-            else // we restore the old selection
-            {
-                PART_EditableTextBox.SelectionStart = oldSelectionStart;
-                PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
+                var oldSelectionStart = PART_EditableTextBox.SelectionStart;
+                var oldSelectionEnd = PART_EditableTextBox.SelectionEnd;
+                var oldTextLength = PART_EditableTextBox.Text?.Length ?? 0;
+
+                if (oldSelectionStart == 0 &&
+                    oldSelectionEnd == oldTextLength) // We had all Text selected, so we select all again
+                {
+                    PART_EditableTextBox.SelectAll();
+                }
+                else if
+                    (oldSelectionStart ==
+                     oldTextLength) // we had the cursor at the last position, so we move the cursor to the end again
+                {
+                    PART_EditableTextBox.SelectionStart = PART_EditableTextBox.Text?.Length ?? 0;
+                }
+                else // we restore the old selection
+                {
+                    PART_EditableTextBox.SelectionStart = oldSelectionStart;
+                    PART_EditableTextBox.SelectionEnd = oldSelectionEnd;
+                }
             }
 
             var prevHasCustomText = HasCustomText;
@@ -687,7 +698,7 @@ public class MultiSelectionComboBox : ListBox
             // If the user's typed text was just matched to selections, select the result so
             // the user can immediately replace or confirm it without repositioning the cursor.
             if (prevHasCustomText && !HasCustomText)
-                PART_EditableTextBox.SelectAll();
+                PART_EditableTextBox?.SelectAll();
         }
         finally
         {
@@ -1255,6 +1266,7 @@ public class MultiSelectionComboBox : ListBox
 
         // Suppress intermediate OnPropertyChanged effects while bound properties are
         // settling to their new values; we do a single clean refresh in EndUpdate.
+        _textUpdatedByBindingDuringDcSwap = false;
         _isDataContextUpdating = true;
         base.OnDataContextBeginUpdate();
     }
@@ -1269,10 +1281,28 @@ public class MultiSelectionComboBox : ListBox
         {
             // Rebuild display order with newly-bound SelectedItems.
             UpdateDisplaySelectedItems();
-            // Recompute HasCustomText from the newly-bound Text and selected-items text
-            // BEFORE calling UpdateEditableText — otherwise UpdateEditableText would read
-            // the stale HasCustomText and potentially overwrite the new VM's bound Text.
-            UpdateHasCustomText(null);
+
+            // When Text is not bound to the new DataContext, any stale Text/HasCustomText
+            // from the previous VM would block UpdateEditableText from reflecting the new
+            // VM's selections.  Clear HasCustomText and skip UpdateHasCustomText so the
+            // stale comparison (old Text vs new VM's null selectedItemsText) can't re-arm it.
+            // UpdateEditableText will call UpdateHasCustomText internally after setting Text.
+            //
+            // When Text IS bound, run UpdateHasCustomText normally so it can detect whether
+            // the new VM's bound Text differs from its selections (i.e. user-customised text
+            // that should be preserved).
+            if (_textUpdatedByBindingDuringDcSwap)
+            {
+                // Recompute HasCustomText from the newly-bound Text and selected-items text
+                // BEFORE calling UpdateEditableText — otherwise UpdateEditableText would read
+                // the stale HasCustomText and potentially overwrite the new VM's bound Text.
+                UpdateHasCustomText(null);
+            }
+            else
+            {
+                HasCustomText = false;
+            }
+
             UpdateEditableText();
 
             // The Text property change was suppressed while _isDataContextUpdating was true,
@@ -1447,7 +1477,16 @@ public class MultiSelectionComboBox : ListBox
             _cachedBindingEvaluator = null;
         }
 
-        if (!IsLoaded || _isDataContextUpdating) return;
+        if (!IsLoaded || _isDataContextUpdating)
+        {
+            // Track whether a binding updated Text while the DataContext was changing.
+            // This lets OnDataContextEndUpdate distinguish "Text is bound to new VM"
+            // (don't clear HasCustomText) from "Text is not bound" (clear stale HasCustomText).
+            if (_isDataContextUpdating && e.Property == TextProperty && !_isTextChanging)
+                _textUpdatedByBindingDuringDcSwap = true;
+
+            return;
+        }
 
         if (e.Property == TextProperty && !_isTextChanging)
         {
