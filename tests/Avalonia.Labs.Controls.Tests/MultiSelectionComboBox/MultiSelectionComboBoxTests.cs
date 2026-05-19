@@ -2084,4 +2084,238 @@ public class MultiSelectionComboBoxTests
 
         Assert.DoesNotContain(":has-selections", mscb.Classes);
     }
+
+    // ─── Enter key separator/comparer guard ──────────────────────────────────────
+
+    /// <summary>
+    /// Regression: the Enter key handler called DoSelectItemsFromText(true) unconditionally,
+    /// without the ObjectToStringComparer / Separator guard that every other call-site
+    /// applies. In Multiple mode with no Separator, DoSelectItemsFromText cannot split the
+    /// text into tokens; position stays 0 and the cleanup loop removes ALL selected items.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task EnterKey_MultipleMode_NoSeparator_DoesNotClearSelection()
+    {
+        var (mscb, window) = await CreateLoadedWithWindowAsync(m =>
+        {
+            m.Separator = null; // Override the default ", "
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Selection.Select(0); // Apple
+        mscb.Selection.Select(2); // Cherry
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        Assert.Equal(2, mscb.SelectedItems!.Count);
+
+        mscb.Focus();
+        // User types a token but there is no separator to split on.
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Without the fix: cleanup loop runs from position=0 → all items removed.
+        // With the fix: guard prevents DoSelectItemsFromText; selection is preserved.
+        Assert.True(mscb.SelectedItems!.Count >= 2,
+            $"Selection was unexpectedly cleared. Expected ≥2 items, got {mscb.SelectedItems!.Count}.");
+    }
+
+    /// <summary>
+    /// Regression: Enter key + Multiple mode + ObjectToStringComparer set + Separator absent.
+    /// Same root cause as <see cref="EnterKey_MultipleMode_NoSeparator_DoesNotClearSelection"/>
+    /// but makes the absent Separator explicit even when a comparer is provided.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task EnterKey_MultipleMode_NoSeparator_WithComparer_DoesNotClearPreExistingSelections()
+    {
+        var (mscb, window) = await CreateLoadedWithWindowAsync(m =>
+        {
+            m.Separator = null;
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.StringToObjectParser  = DefaultStringToObjectParser.Instance;
+        });
+
+        mscb.Selection.Select(1); // Banana
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        Assert.Single(mscb.SelectedItems!);
+
+        mscb.Focus();
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Banana must still be selected (the cleanup loop must not run without a separator).
+        Assert.Contains("Banana", mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()));
+    }
+
+    /// <summary>
+    /// Regression guard: Enter key in Multiple mode WITH a Separator and ObjectToStringComparer
+    /// must still commit the typed text to selections (existing behaviour must not regress).
+    /// </summary>
+    [AvaloniaFact]
+    public async Task EnterKey_MultipleMode_WithSeparatorAndComparer_CommitsTypedText()
+    {
+        var (mscb, window) = await CreateLoadedWithWindowAsync(m =>
+        {
+            // Separator = ", " from CreateLoadedWithWindowAsync defaults.
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+        });
+
+        mscb.Focus();
+        mscb.Text = "Banana";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Banana", selected);
+    }
+
+    // ─── SelectItemsFromTextInputDelay = 0 comparer/separator guard ──────────
+
+    /// <summary>
+    /// Regression: the delay=0 fast-path in SelectItemsFromText bypassed the
+    /// ObjectToStringComparer / Separator guard used by the timer path. Without an
+    /// ObjectToStringComparer no item can ever be matched; the cleanup loop at the end of
+    /// DoSelectItemsFromText then removes every previously-selected item.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task TypingText_Delay0_WithoutObjectToStringComparer_PreservesSelection()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.SelectItemsFromTextInputDelay = 0;
+            // ObjectToStringComparer intentionally NOT set.
+        });
+
+        mscb.Selection.Select(0); // Apple
+        mscb.Selection.Select(2); // Cherry
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        Assert.Equal(2, mscb.SelectedItems!.Count);
+
+        // Without a comparer the typed text cannot drive selection changes.
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Without the fix: all items removed (cleanup from position=0).
+        // With the fix: DoSelectItemsFromText is not called; selection preserved.
+        Assert.Equal(2, mscb.SelectedItems!.Count);
+        Assert.Contains("Apple", mscb.SelectedItems!.Cast<object>());
+        Assert.Contains("Cherry", mscb.SelectedItems!.Cast<object>());
+    }
+
+    /// <summary>
+    /// Regression: delay=0 + ObjectToStringComparer set but Separator absent in Multiple mode.
+    /// Equivalent to the Enter-key bug but triggered by typing: the cleanup loop runs from
+    /// position=0 because strings is null when there is no separator to split on.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task TypingText_Delay0_NoSeparator_MultipleMode_PreservesSelection()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            m.Separator = null; // Override default ", "
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Selection.Select(0); // Apple
+        mscb.Selection.Select(2); // Cherry
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        Assert.Equal(2, mscb.SelectedItems!.Count);
+
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        Assert.True(mscb.SelectedItems!.Count >= 2,
+            $"Selection was unexpectedly cleared. Expected ≥2 items, got {mscb.SelectedItems!.Count}.");
+    }
+
+    /// <summary>
+    /// Regression guard: delay=0 WITH ObjectToStringComparer and Separator must still
+    /// select the matching item as the user types (existing behaviour must not regress).
+    /// </summary>
+    [AvaloniaFact]
+    public async Task TypingText_Delay0_WithComparerAndSeparator_SelectsMatchingItem()
+    {
+        var mscb = await CreateLoadedAsync(m =>
+        {
+            // Separator = ", " from CreateLoadedAsync defaults.
+            m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
+            m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
+            m.SelectItemsFromTextInputDelay = 0;
+        });
+
+        mscb.Text = "Banana";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Banana", selected);
+    }
+
+    // ─── LostFocus guard: DataContext-updating flag ───────────────────────────
+
+    /// <summary>
+    /// If the textbox loses focus while a DataContext swap is in progress (e.g. because
+    /// the incoming ItemsSource change causes a re-layout that moves focus), the
+    /// LostFocus handler must be a no-op. Running DoSelectItemsFromText with half-updated
+    /// bindings can corrupt the incoming selection.
+    ///
+    /// We simulate the condition by manually firing LostFocus while
+    /// _isDataContextUpdating is true via a DataContext swap with simultaneous selection.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task LostFocus_DuringDataContextSwap_DoesNotClearNewVmSelection()
+    {
+        var items = new List<string> { "Apple", "Banana", "Cherry" };
+
+        var vm1SelectedItems = new ObservableCollection<object>();
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = vm1SelectedItems };
+
+        var vm2SelectedItems = new ObservableCollection<object> { "Cherry" };
+        var vm2 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = vm2SelectedItems };
+
+        var mscb = new Controls.MultiSelectionComboBox
+        {
+            SelectionMode = SelectionMode.Multiple,
+            Separator = ", ",
+            IsEditable = true,
+            ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
+        };
+        mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
+        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
+
+        mscb.DataContext = vm1;
+        var window = new Window { Content = mscb, Width = 400, Height = 60 };
+        window.Show();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Simulate the user having typed something that makes Text ≠ "" before the swap.
+        mscb.Text = "Apple";
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Swap to VM2 which has Cherry already selected.
+        mscb.DataContext = vm2;
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // Cherry must survive; "Apple" text from VM1 must not drive a spurious selection on VM2.
+        var selected = mscb.SelectedItems!.Cast<object>().Select(o => o.ToString()).ToList();
+        Assert.Contains("Cherry", selected);
+    }
 }

@@ -871,9 +871,17 @@ public class MultiSelectionComboBox : ListBox
         }
 
         // Select the items from the text input directly if milliseconds to wait is 0.
+        // Apply the same guard used by the timer path: without an ObjectToStringComparer /
+        // StringToObjectParser or a proper separator in Multiple mode, splitting Text into
+        // tokens is not defined and the cleanup loop in DoSelectItemsFromText would remove
+        // every previously-selected item.
         if (millisecondsToWait == 0 && _isUserDefinedTextInputPending)
         {
-            DoSelectItemsFromText(true);
+            if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+                (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            {
+                DoSelectItemsFromText(true);
+            }
             return;
         }
         
@@ -1368,7 +1376,15 @@ public class MultiSelectionComboBox : ListBox
         switch (e.Key)
         {
             case Key.Enter when IsEditable && !string.IsNullOrEmpty(Text) && !AcceptsReturn:
-                DoSelectItemsFromText(true);
+                // Apply the same guard used by every other DoSelectItemsFromText call site.
+                // Without an ObjectToStringComparer / StringToObjectParser, or without a
+                // separator in Multiple mode, the cleanup loop in DoSelectItemsFromText runs
+                // from position=0 and unconditionally removes all selected items.
+                if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
+                    (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+                {
+                    DoSelectItemsFromText(true);
+                }
                 e.Handled = true;
                 break;
 
@@ -1429,6 +1445,11 @@ public class MultiSelectionComboBox : ListBox
 
     private void PART_EditableTextBox_LostFocus(object? sender, RoutedEventArgs e)
     {
+        // Skip during a DataContext swap; OnDataContextBeginUpdate already committed any
+        // pending text to the old VM, and OnDataContextEndUpdate will handle the new VM.
+        // Running here with mixed-state properties could corrupt the incoming selection.
+        if (_isDataContextUpdating) return;
+
         // Guard matches all other DoSelectItemsFromText call sites: without a separator
         // in multiple-selection mode, splitting Text is not defined and DoSelectItemsFromText
         // would clear ALL selections (position stays 0, cleanup loop removes everything).
