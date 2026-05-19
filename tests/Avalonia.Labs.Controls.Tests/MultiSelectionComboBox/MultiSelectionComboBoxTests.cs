@@ -2119,14 +2119,13 @@ public class MultiSelectionComboBoxTests
 
         // Without the fix: cleanup loop runs from position=0 → all items removed.
         // With the fix: guard prevents DoSelectItemsFromText; selection is preserved.
-        Assert.True(mscb.SelectedItems!.Count >= 2,
-            $"Selection was unexpectedly cleared. Expected ≥2 items, got {mscb.SelectedItems!.Count}.");
+        Assert.Equal(2, mscb.SelectedItems!.Count);
     }
 
     /// <summary>
     /// Regression: Enter key + Multiple mode + ObjectToStringComparer set + Separator absent.
-    /// Same root cause as <see cref="EnterKey_MultipleMode_NoSeparator_DoesNotClearSelection"/>
-    /// but makes the absent Separator explicit even when a comparer is provided.
+    /// Same root cause as EnterKey_MultipleMode_NoSeparator_DoesNotClearSelection but makes
+    /// the absent Separator explicit even when both a comparer and a parser are provided.
     /// </summary>
     [AvaloniaFact]
     public async Task EnterKey_MultipleMode_NoSeparator_WithComparer_DoesNotClearPreExistingSelections()
@@ -2241,8 +2240,7 @@ public class MultiSelectionComboBoxTests
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        Assert.True(mscb.SelectedItems!.Count >= 2,
-            $"Selection was unexpectedly cleared. Expected ≥2 items, got {mscb.SelectedItems!.Count}.");
+        Assert.Equal(2, mscb.SelectedItems!.Count);
     }
 
     /// <summary>
