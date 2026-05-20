@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Avalonia.Labs.Controls;assembly=Avalonia.Labs.Controls"
+             xmlns:vm="clr-namespace:Avalonia.Labs.Catalog.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Avalonia.Labs.Catalog.Views.MultiSelectionComboBoxView"
+             x:DataType="vm:MultiSelectionComboBoxViewModel">
+
+  <Grid ColumnDefinitions="220,*" Margin="16" RowDefinitions="Auto,*">
+
+    <TextBlock Grid.ColumnSpan="2" Text="MultiSelectionComboBox" FontSize="22" FontWeight="SemiBold"
+               Margin="0,0,0,16"/>
+
+    <!-- ── Property panel ───────────────────────────────────────── -->
+    <ScrollViewer Grid.Row="1" Grid.Column="0">
+      <StackPanel Spacing="10" Margin="0,0,16,0">
+
+        <TextBlock Text="Properties" FontWeight="SemiBold"/>
+
+        <CheckBox Content="IsEditable"      IsChecked="{Binding IsEditable}"/>
+        <CheckBox Content="IsReadOnly"      IsChecked="{Binding IsReadOnly}"/>
+        <CheckBox Content="ShowClearButton" IsChecked="{Binding ShowClearButton}"/>
+        
+        <StackPanel Spacing="4">
+          <TextBlock Text="OrderSelectedItemsBy"/>
+          <ComboBox ItemsSource="{Binding OrderTypes}" SelectedItem="{Binding OrderSelectedItemsBy}"/>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="SelectItemsFromTextInputDelay  (-1 = disabled)"/>
+          <NumericUpDown Value="{Binding SelectItemsFromTextInputDelay}"
+                         Minimum="-1" Maximum="5000" Increment="100" FormatString="0"/>
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ── Live demo ─────────────────────────────────────────────── -->
+    <ScrollViewer Grid.Row="1" Grid.Column="1">
+      <StackPanel Spacing="24" VerticalAlignment="Top">
+
+        <!-- Multiple selection -->
+        <StackPanel Spacing="6">
+          <TextBlock Text="Multiple selection  (SelectionMode=&quot;Multiple, Toggle&quot;)"
+                     FontWeight="SemiBold"/>
+          <controls:MultiSelectionComboBox
+              Width="380"
+              HorizontalAlignment="Left"
+              ItemsSource="{Binding Frameworks}"
+              SelectedItems="{Binding SelectedFrameworks}"
+              SelectionMode="Multiple, Toggle"
+              IsEditable="{Binding IsEditable}"
+              IsReadOnly="{Binding IsReadOnly}"
+              ShowClearButton="{Binding ShowClearButton}"
+              OrderSelectedItemsBy="{Binding OrderSelectedItemsBy}"
+              SelectItemsFromTextInputDelay="{Binding SelectItemsFromTextInputDelay}"
+              Separator=", "
+              PlaceholderText="Select frameworks…"/>
+        </StackPanel>
+
+        <!-- Single selection -->
+        <StackPanel Spacing="6">
+          <TextBlock Text="Single selection  (SelectionMode=&quot;Single&quot;)"
+                     FontWeight="SemiBold"/>
+          <controls:MultiSelectionComboBox
+              Width="380"
+              HorizontalAlignment="Left"
+              ItemsSource="{Binding Frameworks}"
+              SelectionMode="Single"
+              IsEditable="{Binding IsEditable}"
+              IsReadOnly="{Binding IsReadOnly}"
+              ShowClearButton="{Binding ShowClearButton}"
+            PlaceholderText="Select a framework…"/>
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
+  </Grid>
+</UserControl>

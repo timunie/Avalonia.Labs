@@ -1,0 +1,534 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:Avalonia.Labs.Controls"
+                    xmlns:input="clr-namespace:System.Windows.Input;assembly=System.ObjectModel">
+
+  <Design.PreviewWith>
+    <StackPanel Spacing="12" Width="320" Margin="16">
+      <!-- Editable + filter -->
+      <controls:MultiSelectionComboBox IsEditable="True"
+                                       PlaceholderText="Type to filter…"
+                                       SelectionMode="Multiple, Toggle"
+                                       ItemsSource="Avalonia Flutter React Angular Vue Svelte" />
+      <!-- Non-editable multiple -->
+      <controls:MultiSelectionComboBox SelectionMode="Multiple, Toggle"
+                                       PlaceholderText="Pick items…"
+                                       ItemsSource="Avalonia Flutter React Angular" />
+      <!-- Non-editable single -->
+      <controls:MultiSelectionComboBox PlaceholderText="Pick one…"
+                                       ItemsSource="Avalonia Flutter React Angular" />
+    </StackPanel>
+  </Design.PreviewWith>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Theme-dependent brush resources
+       ═══════════════════════════════════════════════════════════════ -->
+  <ResourceDictionary.ThemeDictionaries>
+
+    <ResourceDictionary x:Key="Default">
+      <SolidColorBrush x:Key="MscbBackground"                  Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbBackgroundPointerOver"        Color="#FFF5F5F5"/>
+      <SolidColorBrush x:Key="MscbBackgroundPressed"            Color="#FFEDEDED"/>
+      <SolidColorBrush x:Key="MscbBackgroundDisabled"           Color="#FFF7F7F7"/>
+      <SolidColorBrush x:Key="MscbBorderBrush"                  Color="#FF767676"/>
+      <SolidColorBrush x:Key="MscbBorderBrushPointerOver"       Color="#FF1B1B1B"/>
+      <SolidColorBrush x:Key="MscbBorderBrushFocused"           Color="#FF0078D4"/>
+      <SolidColorBrush x:Key="MscbBorderBrushDisabled"          Color="#FFBCBCBC"/>
+      <SolidColorBrush x:Key="MscbForeground"                   Color="#E4000000"/>
+      <SolidColorBrush x:Key="MscbForegroundDisabled"           Color="#5C000000"/>
+      <SolidColorBrush x:Key="MscbPlaceholderForeground"        Color="#72000000"/>
+      <SolidColorBrush x:Key="MscbGlyphForeground"              Color="#9E000000"/>
+      <SolidColorBrush x:Key="MscbGlyphForegroundDisabled"      Color="#5C000000"/>
+      <SolidColorBrush x:Key="MscbDropDownBackground"           Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbDropDownBorderBrush"          Color="#FFD1D1D1"/>
+      <SolidColorBrush x:Key="MscbDropDownForeground"           Color="#E4000000"/>
+      <SolidColorBrush x:Key="MscbChipBackground"               Color="#FFE8E8E8"/>
+      <SolidColorBrush x:Key="MscbChipBorderBrush"              Color="#00000000"/>
+      <SolidColorBrush x:Key="MscbChipForeground"               Color="#E4000000"/>
+      <SolidColorBrush x:Key="MscbChipRemoveForeground"         Color="#9E000000"/>
+      <SolidColorBrush x:Key="MscbChipRemoveForegroundHover"    Color="#CC000000"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundPointerOver"    Color="#14000000"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundPressed"        Color="#1F000000"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelected"              Color="#1A0078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPointerOver"  Color="#260078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPressed"       Color="#330078D4"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedDisabled"      Color="#0D0078D4"/>
+      <SolidColorBrush x:Key="MscbItemCheckForeground"                 Color="#FF0078D4"/>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="MscbBackground"                  Color="#FF2D2D2D"/>
+      <SolidColorBrush x:Key="MscbBackgroundPointerOver"        Color="#FF383838"/>
+      <SolidColorBrush x:Key="MscbBackgroundPressed"            Color="#FF404040"/>
+      <SolidColorBrush x:Key="MscbBackgroundDisabled"           Color="#FF252525"/>
+      <SolidColorBrush x:Key="MscbBorderBrush"                  Color="#FF898989"/>
+      <SolidColorBrush x:Key="MscbBorderBrushPointerOver"       Color="#FFDFDFDF"/>
+      <SolidColorBrush x:Key="MscbBorderBrushFocused"           Color="#FF60CDFF"/>
+      <SolidColorBrush x:Key="MscbBorderBrushDisabled"          Color="#FF434343"/>
+      <SolidColorBrush x:Key="MscbForeground"                   Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbForegroundDisabled"           Color="#5DFFFFFF"/>
+      <SolidColorBrush x:Key="MscbPlaceholderForeground"        Color="#87FFFFFF"/>
+      <SolidColorBrush x:Key="MscbGlyphForeground"              Color="#C5FFFFFF"/>
+      <SolidColorBrush x:Key="MscbGlyphForegroundDisabled"      Color="#5DFFFFFF"/>
+      <SolidColorBrush x:Key="MscbDropDownBackground"           Color="#FF1F1F1F"/>
+      <SolidColorBrush x:Key="MscbDropDownBorderBrush"          Color="#FF454545"/>
+      <SolidColorBrush x:Key="MscbDropDownForeground"           Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbChipBackground"               Color="#FF3A3A3A"/>
+      <SolidColorBrush x:Key="MscbChipBorderBrush"              Color="#00000000"/>
+      <SolidColorBrush x:Key="MscbChipForeground"               Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbChipRemoveForeground"         Color="#87FFFFFF"/>
+      <SolidColorBrush x:Key="MscbChipRemoveForegroundHover"    Color="#FFFFFFFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundPointerOver"    Color="#14FFFFFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundPressed"        Color="#1FFFFFFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelected"              Color="#2060CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPointerOver"  Color="#2B60CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedPressed"       Color="#3360CDFF"/>
+      <SolidColorBrush x:Key="MscbItemBackgroundSelectedDisabled"      Color="#0D60CDFF"/>
+      <SolidColorBrush x:Key="MscbItemCheckForeground"                 Color="#FF60CDFF"/>
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Shared (theme-independent) resources
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Chevron-down path — matches Fluent ComboBox glyph (2048-unit canvas, filled) -->
+  <StreamGeometry x:Key="MscbChevronGeometry">M1939 486L2029 576L1024 1581L19 576L109 486L1024 1401L1939 486Z</StreamGeometry>
+
+  <!-- Close/× path — filled polygon, same as Fluent TextBox clear button -->
+  <StreamGeometry x:Key="MscbCloseGeometry">M 11.416016,10 20,1.4160156 18.583984,0 10,8.5839846 1.4160156,0 0,1.4160156 8.5839844,10 0,18.583985 1.4160156,20 10,11.416015 18.583984,20 20,18.583985 Z</StreamGeometry>
+
+  <!-- Check-mark path — filled polygon, same as Fluent CheckBox (16 × 16 viewport) -->
+  <StreamGeometry x:Key="MscbCheckGeometry">M5.5 10.586 1.707 6.793A1 1 0 0 0 .293 8.207l4.5 4.5a1 1 0 0 0 1.414 0l11-11A1 1 0 0 0 15.793.293L5.5 10.586Z</StreamGeometry>
+
+  <CornerRadius x:Key="MscbCornerRadius">4</CornerRadius>
+  <CornerRadius x:Key="MscbDropDownCornerRadius">6</CornerRadius>
+  <CornerRadius x:Key="MscbChipCornerRadius">12</CornerRadius>
+  <Thickness    x:Key="MscbBorderThickness">1</Thickness>
+  <Thickness    x:Key="MscbPadding">8,5,0,5</Thickness>
+  <Thickness    x:Key="MscbChipPadding">8,2,4,2</Thickness>
+  <Thickness    x:Key="MscbChipMargin">2</Thickness>
+  <Thickness    x:Key="MscbDropDownBorderThickness">1</Thickness>
+  <Thickness    x:Key="MscbDropDownContentPadding">4</Thickness>
+  <x:Double     x:Key="MscbMinHeight">32</x:Double>
+  <x:Double     x:Key="MscbMinWidth">120</x:Double>
+  <x:Double     x:Key="MscbRightColumnWidth">32</x:Double>
+  <x:Double     x:Key="MscbGlyphSize">11</x:Double>
+  <x:Double     x:Key="MscbCheckSize">12</x:Double>
+  <x:Double     x:Key="MscbCloseSize">8</x:Double>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Invisible TextBox style – used inside the combo when IsEditable
+       ═══════════════════════════════════════════════════════════════ -->
+  <ControlTheme x:Key="MscbTextBoxTheme" TargetType="TextBox"
+                BasedOn="{StaticResource {x:Type TextBox}}">
+    <Setter Property="Background"       Value="Transparent"/>
+    <Setter Property="BorderThickness"  Value="0"/>
+    <Setter Property="MinHeight"        Value="0"/>
+    <Setter Property="Padding"          Value="0"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </ControlTheme>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MultiSelectionComboBoxItem theme
+       ═══════════════════════════════════════════════════════════════ -->
+  <ControlTheme x:Key="{x:Type controls:MultiSelectionComboBoxItem}"
+                TargetType="controls:MultiSelectionComboBoxItem">
+    <Setter Property="Padding"                    Value="11,6,11,6"/>
+    <Setter Property="CornerRadius"               Value="4"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment"   Value="Center"/>
+    <Setter Property="Background"                 Value="Transparent"/>
+    <Setter Property="BorderBrush"                Value="Transparent"/>
+    <Setter Property="BorderThickness"            Value="1"/>
+    <Setter Property="Foreground"                 Value="{DynamicResource MscbDropDownForeground}"/>
+    <Setter Property="FocusAdorner"               Value="{x:Null}"/>
+    
+    <Setter Property="Template">
+      <ControlTemplate>
+        <!--
+          PART_LayoutRoot: the visual root for background / border / focus ring.
+          A fixed 20-wide column for the checkmark is always reserved so all items
+          line up consistently regardless of selection state.
+        -->
+        <Border x:Name="PART_LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <Grid ColumnDefinitions="*, 20">
+            <ContentPresenter Grid.Column="0"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+            <!-- Checkmark: non-interactive, shown only when :selected -->
+            <PathIcon x:Name="CheckMark"
+                      Grid.Column="1"
+                      Width="{DynamicResource MscbCheckSize}"
+                      Height="{DynamicResource MscbCheckSize}"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      IsHitTestVisible="False"
+                      IsVisible="False"
+                      Foreground="{DynamicResource MscbItemCheckForeground}"
+                      Data="{DynamicResource MscbCheckGeometry}"/>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Normal interaction states -->
+    <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
+      <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundPointerOver}"/>
+    </Style>
+    <Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
+      <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundPressed}"/>
+    </Style>
+
+    <!-- Selected state group — nested to avoid specificity surprises -->
+    <Style Selector="^:selected">
+      <Style Selector="^ /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelected}"/>
+      </Style>
+      <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedPointerOver}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedPressed}"/>
+      </Style>
+      <Style Selector="^:disabled /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource MscbItemBackgroundSelectedDisabled}"/>
+      </Style>
+    </Style>
+
+    <!-- Checkmark visibility -->
+    <Style Selector="^:selected /template/ PathIcon#CheckMark">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Disabled: dim the whole item (foreground, checkmark, etc.) -->
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.4"/>
+    </Style>
+
+    <!-- Focus ring -->
+    <Style Selector="^:focus-visible /template/ Border#PART_LayoutRoot">
+      <Setter Property="BorderBrush" Value="{DynamicResource MscbBorderBrushFocused}"/>
+    </Style>
+  </ControlTheme>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MultiSelectionComboBox theme
+       ═══════════════════════════════════════════════════════════════ -->
+  <ControlTheme x:Key="{x:Type controls:MultiSelectionComboBox}"
+                TargetType="controls:MultiSelectionComboBox">
+
+    <Setter Property="MinHeight"             Value="{DynamicResource MscbMinHeight}"/>
+    <Setter Property="MinWidth"              Value="{DynamicResource MscbMinWidth}"/>
+    <Setter Property="Padding"               Value="{DynamicResource MscbPadding}"/>
+    <Setter Property="Background"            Value="{DynamicResource MscbBackground}"/>
+    <Setter Property="BorderBrush"           Value="{DynamicResource MscbBorderBrush}"/>
+    <Setter Property="BorderThickness"       Value="{DynamicResource MscbBorderThickness}"/>
+    <Setter Property="CornerRadius"          Value="{DynamicResource MscbCornerRadius}"/>
+    <Setter Property="Foreground"            Value="{DynamicResource MscbForeground}"/>
+    <Setter Property="PlaceholderForeground" Value="{DynamicResource MscbPlaceholderForeground}"/>
+    <Setter Property="MaxDropDownHeight"     Value="504"/>
+    <Setter Property="HorizontalAlignment"   Value="Left"/>
+    <Setter Property="VerticalAlignment"     Value="Top"/>
+    <Setter Property="FocusAdorner"          Value="{x:Null}"/>
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
+    <Setter Property="KeyboardNavigation.TabNavigation"           Value="Once"/>
+    <Setter Property="TextBoxTheme" Value="{StaticResource MscbTextBoxTheme}"/>
+    <Setter Property="ObjectToStringComparer" Value="{x:Static controls:DefaultObjectToStringComparer.Instance}" />
+    <Setter Property="SelectedItemsItemPanel">
+      <ItemsPanelTemplate>
+        <WrapPanel/>
+      </ItemsPanelTemplate>
+    </Setter>
+
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DataValidationErrors>
+          <!--
+            Outer grid: Col 0 = content (chips / text-box / placeholder / single-item).
+                        Col 1 = right controls (clear button + chevron, side-by-side).
+            The Background border spans both columns for the full-width visual.
+          -->
+          <Grid ColumnDefinitions="*, Auto">
+
+            <!-- Full-width visual border -->
+            <Border x:Name="PART_Background"
+                    Grid.ColumnSpan="2"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    MinWidth="{DynamicResource MscbMinWidth}"/>
+
+            <!-- Focus ring (second inner border, shown on :focus-visible) -->
+            <Border x:Name="FocusBorder"
+                    Grid.ColumnSpan="2"
+                    IsHitTestVisible="False"
+                    IsVisible="False"
+                    BorderBrush="{DynamicResource MscbBorderBrushFocused}"
+                    BorderThickness="2"
+                    CornerRadius="{DynamicResource MscbCornerRadius}"/>
+
+            <!-- ── Content column ───────────────────────────────── -->
+            <Panel Grid.Column="0" Margin="{TemplateBinding Padding}">
+
+              <!--
+                1. Editable TextBox.
+                   Visible only in [IsEditable=True] via the style below.
+                   Bound TwoWay to Text so the user's typing flows through to filter logic.
+              -->
+              <TextBox x:Name="PART_EditableTextBox"
+                       Theme="{TemplateBinding TextBoxTheme}"
+                       IsVisible="False"
+                       Text="{TemplateBinding Text, Mode=TwoWay}"
+                       PlaceholderText="{TemplateBinding PlaceholderText}"
+                       IsReadOnly="{TemplateBinding IsReadOnly}"
+                       Foreground="{TemplateBinding Foreground}"
+                       TextWrapping="{TemplateBinding TextWrapping}"
+                       AcceptsReturn="{TemplateBinding AcceptsReturn}"
+                       VerticalAlignment="Center">
+                <TextBox.Resources>
+                  <SolidColorBrush x:Key="TextControlBackgroundFocused">Transparent</SolidColorBrush>
+                  <SolidColorBrush x:Key="TextControlBackgroundPointerOver">Transparent</SolidColorBrush>
+                  <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+                </TextBox.Resources>
+              </TextBox>
+
+              <!--
+                2. Chip strip (WrapPanel of removable badges).
+                   Visible only when :not([IsEditable=True]):multiple:has-selections.
+                   ItemsSource is bound to DisplaySelectedItems (a snapshot rebuilt on each
+                   selection change).
+                   The Tag carries RemoveSelectedItemCommand so chip buttons can bind to it
+                   without reaching all the way up to the MultiSelectionComboBox ancestor.
+              -->
+              <ItemsControl x:Name="PART_SelectedItemsPresenter"
+                            IsVisible="False"
+                            ItemsSource="{TemplateBinding DisplaySelectedItems}"
+                            ItemsPanel="{TemplateBinding SelectedItemsItemPanel}"
+                            Tag="{TemplateBinding RemoveSelectedItemCommand}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <!-- Chip -->
+                    <Border Background="{DynamicResource MscbChipBackground}"
+                            BorderBrush="{DynamicResource MscbChipBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource MscbChipCornerRadius}"
+                            Padding="{DynamicResource MscbChipPadding}"
+                            Margin="{DynamicResource MscbChipMargin}"
+                            VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ContentPresenter Content="{Binding}"
+                                          VerticalAlignment="Center"
+                                          FontSize="12"/>
+                        <!-- Remove button: command is on the parent ItemsControl's Tag -->
+                        <Button Padding="2"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                Command="{Binding $parent[ItemsControl].((input:ICommand)Tag)}"
+                                CommandParameter="{Binding}">
+                          <PathIcon Width="{DynamicResource MscbCloseSize}"
+                                    Height="{DynamicResource MscbCloseSize}"
+                                    Data="{DynamicResource MscbCloseGeometry}"
+                                    Foreground="{DynamicResource MscbChipRemoveForeground}"/>
+                        </Button>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <!--
+                3. Single-item ContentPresenter.
+                   Visible only when :not([IsEditable=True]):not(:multiple):has-selections.
+              -->
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                IsVisible="False"
+                                Content="{TemplateBinding SelectedItem}"
+                                ContentTemplate="{TemplateBinding SelectedItemTemplate}"
+                                VerticalAlignment="Center"/>
+
+              <!--
+                4. Placeholder.
+                   Visible when not editable and nothing is selected.
+              -->
+              <TextBlock x:Name="PlaceholderTextBlock"
+                         IsVisible="False"
+                         Text="{TemplateBinding PlaceholderText}"
+                         Foreground="{TemplateBinding PlaceholderForeground}"
+                         VerticalAlignment="Center"/>
+            </Panel>
+
+            <!-- ── Right column (clear button + chevron, side-by-side) ───── -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+
+              <!-- Clear button: shown when ShowClearButton=True and :has-selections -->
+              <Button x:Name="PART_ClearButton"
+                      IsVisible="False"
+                      Theme="{StaticResource FluentTextBoxButton}">
+                <PathIcon Width="10" Height="10"
+                          Data="{DynamicResource MscbCloseGeometry}"/>
+              </Button>
+
+              <!-- Chevron + overlay panel (always 32 px wide) -->
+              <Panel Width="32">
+                <!-- Drop-down chevron -->
+                <PathIcon x:Name="DropDownGlyph"
+                          Width="{DynamicResource MscbGlyphSize}"
+                          Height="{DynamicResource MscbGlyphSize}"
+                          IsHitTestVisible="False"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Foreground="{DynamicResource MscbGlyphForeground}"
+                          Data="{DynamicResource MscbChevronGeometry}"/>
+
+                <!--
+                  Transparent overlay: in editable mode the TextBox consumes all pointer
+                  events in col 0. This overlay sits over the chevron area so the user can
+                  still click it to open the drop-down.
+                  Made visible via style below when IsEditable=True.
+                -->
+                <Border x:Name="PART_DropDownOverlay"
+                        IsVisible="False"
+                        Background="Transparent"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
+              </Panel>
+            </StackPanel>
+
+            <!-- ── Drop-down Popup ────────────────────────────────── -->
+            <Popup x:Name="PART_Popup"
+                   Grid.ColumnSpan="2"
+                   WindowManagerAddShadowHint="False"
+                   IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                   MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                   MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                   PlacementTarget="{Binding #PART_Background}"
+                   IsLightDismissEnabled="True"
+                   InheritsTransform="True">
+              <Border Background="{DynamicResource MscbDropDownBackground}"
+                      BorderBrush="{DynamicResource MscbDropDownBorderBrush}"
+                      BorderThickness="{DynamicResource MscbDropDownBorderThickness}"
+                      CornerRadius="{DynamicResource MscbDropDownCornerRadius}"
+                      Padding="{DynamicResource MscbDropDownContentPadding}">
+                 <Grid RowDefinitions="Auto,*,Auto">
+                  <ContentPresenter x:Name="PART_DropDownHeader"
+                                    Grid.Row="0"
+                                    IsVisible="{TemplateBinding IsDropDownHeaderVisible}"
+                                    Content="{TemplateBinding DropDownHeaderContent}"
+                                    ContentTemplate="{TemplateBinding DropDownHeaderContentTemplate}"/>
+                  <!--
+                    Row 1 is a Panel so we can layer the items list and the custom-text
+                    overlay in the same cell. The overlay sits on top and eats all pointer
+                    events when :has-custom-text, preventing accidental item selection while
+                    the user is typing text that doesn't match any existing item.
+                  -->
+                  <Panel Grid.Row="1">
+                    <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                  VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                  IsScrollChainingEnabled="False">
+                      <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                      ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                    </ScrollViewer>
+                    <Border x:Name="PART_CustomTextOverlay"
+                            IsVisible="False"
+                            IsHitTestVisible="True"
+                            Background="{DynamicResource MscbDropDownBackground}"
+                            Opacity="0.6"/>
+                  </Panel>
+                  <ContentPresenter x:Name="PART_DropDownFooter"
+                                    Grid.Row="2"
+                                    IsVisible="{TemplateBinding IsDropDownFooterVisible}"
+                                    Content="{TemplateBinding DropDownFooterContent}"
+                                    ContentTemplate="{TemplateBinding DropDownFooterContentTemplate}"/>
+                </Grid>
+              </Border>
+            </Popup>
+
+          </Grid>
+        </DataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- ── Visibility rules ────────────────────────────────────── -->
+
+    <!-- Editable mode: show TextBox, show overlay -->
+    <Style Selector="^:editable /template/ TextBox#PART_EditableTextBox">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    <Style Selector="^:editable /template/ Border#PART_DropDownOverlay">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Non-editable + multiple + has selections → chips -->
+    <Style Selector="^:not(:editable):multiple:has-selections /template/ ItemsControl#PART_SelectedItemsPresenter">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    
+    <!-- Non-editable + single + has selection → content presenter -->
+    <Style Selector="^:not(:editable):not(:multiple):has-selections /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Non-editable + nothing selected → placeholder -->
+    <Style Selector="^:not(:editable):not(:has-selections) /template/ TextBlock#PlaceholderTextBlock">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Clear button swaps with chevron when ShowClearButton=True and items are selected -->
+    <Style Selector="^:has-selections[ShowClearButton=True] /template/ Button#PART_ClearButton">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- Custom text: overlay the items list so it cannot be interacted with -->
+    <Style Selector="^:has-custom-text /template/ Border#PART_CustomTextOverlay">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <!-- ── State styles ─────────────────────────────────────────── -->
+
+    <Style Selector="^:pointerover /template/ Border#PART_Background">
+      <Setter Property="Background"  Value="{DynamicResource MscbBackgroundPointerOver}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MscbBorderBrushPointerOver}"/>
+    </Style>
+
+    <Style Selector="^:pressed /template/ Border#PART_Background">
+      <Setter Property="Background"  Value="{DynamicResource MscbBackgroundPressed}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MscbBorderBrushPointerOver}"/>
+    </Style>
+
+    <Style Selector="^:focus-visible /template/ Border#FocusBorder">
+      <Setter Property="IsVisible" Value="True"/>
+    </Style>
+
+    <Style Selector="^:disabled /template/ Border#PART_Background">
+      <Setter Property="Background"  Value="{DynamicResource MscbBackgroundDisabled}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MscbBorderBrushDisabled}"/>
+    </Style>
+    <Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+      <Setter Property="Foreground" Value="{DynamicResource MscbGlyphForegroundDisabled}"/>
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource MscbForegroundDisabled}"/>
+    </Style>
+
+    <!-- Editable mode: the TextBox takes tab focus, not the combo itself -->
+    <Style Selector="^[IsEditable=True]">
+      <Setter Property="IsTabStop" Value="False"/>
+      <Setter Property="KeyboardNavigation.TabNavigation" Value="Local"/>
+    </Style>
+
+  </ControlTheme>
+
+</ResourceDictionary>
