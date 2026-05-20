@@ -16,7 +16,7 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
     public MultiSelectionComboBoxViewModel()
     {
         Title = "MultiSelectionComboBox";
-        
+
         SelectedFrameworks.CollectionChanged += (s, e) =>
         {
             if (e.NewItems is not null)
@@ -44,18 +44,19 @@ public partial class MultiSelectionComboBoxViewModel : ViewModelBase
         "SwiftUI", "Uno Platform", "WPF", "WinUI 3",
         "Xamarin", "Angular", "Vue.js", "Svelte",
     ];
-    
+
     public ObservableCollection<string> SelectedFrameworks { get; } = new();
 
     public IReadOnlyList<SelectedItemsOrderType> OrderTypes { get; } = System.Enum.GetValues<SelectedItemsOrderType>();
 
-    [ObservableProperty] public partial bool IsEditable       { get; set; } = false;
-    [ObservableProperty] public partial bool IsReadOnly       { get; set; } = false;
-    [ObservableProperty] public partial bool ShowClearButton  { get; set; } = true;
-    [ObservableProperty] public partial int  MaxSelectedItems { get; set; } = -1;
+    [ObservableProperty] public partial bool IsEditable { get; set; } = false;
 
-    [ObservableProperty] public partial SelectedItemsOrderType OrderSelectedItemsBy    { get; set; } = SelectedItemsOrderType.SelectedOrder;
-    [ObservableProperty] public partial int  SelectItemsFromTextInputDelay             { get; set; } = 200;
-    [ObservableProperty] public partial bool InterceptKeyboardSelection                { get; set; } = true;
-    [ObservableProperty] public partial bool InterceptMouseWheelSelection              { get; set; } = true;
+    [ObservableProperty] public partial bool IsReadOnly { get; set; } = false;
+
+    [ObservableProperty] public partial bool ShowClearButton { get; set; } = true;
+
+    [ObservableProperty]
+    public partial SelectedItemsOrderType OrderSelectedItemsBy { get; set; } = SelectedItemsOrderType.SelectedOrder;
+
+    [ObservableProperty] public partial int SelectItemsFromTextInputDelay { get; set; } = 200;
 }

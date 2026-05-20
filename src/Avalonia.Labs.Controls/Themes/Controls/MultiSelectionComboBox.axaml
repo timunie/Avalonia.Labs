@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:controls="using:Avalonia.Labs.Controls">
+                    xmlns:controls="using:Avalonia.Labs.Controls"
+                    xmlns:input="clr-namespace:System.Windows.Input;assembly=System.ObjectModel">
 
   <Design.PreviewWith>
     <StackPanel Spacing="12" Width="320" Margin="16">
@@ -241,9 +242,8 @@
     <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
     <Setter Property="KeyboardNavigation.TabNavigation"           Value="Once"/>
-    <Setter Property="TextBoxTheme"          Value="{StaticResource MscbTextBoxTheme}"/>
+    <Setter Property="TextBoxTheme" Value="{StaticResource MscbTextBoxTheme}"/>
     <Setter Property="ObjectToStringComparer" Value="{x:Static controls:DefaultObjectToStringComparer.Instance}" />
-    <Setter Property="StringToObjectParser" Value="{x:Static controls:DefaultStringToObjectParser.Instance}" />
     <Setter Property="SelectedItemsItemPanel">
       <ItemsPanelTemplate>
         <WrapPanel/>
@@ -336,7 +336,7 @@
                                 BorderThickness="0"
                                 VerticalAlignment="Center"
                                 Focusable="False"
-                                Command="{Binding $parent[ItemsControl].Tag}"
+                                Command="{Binding $parent[ItemsControl].((input:ICommand)Tag)}"
                                 CommandParameter="{Binding}">
                           <PathIcon Width="{DynamicResource MscbCloseSize}"
                                     Height="{DynamicResource MscbCloseSize}"

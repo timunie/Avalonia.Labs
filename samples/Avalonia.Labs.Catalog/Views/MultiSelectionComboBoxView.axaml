@@ -22,16 +22,7 @@
         <CheckBox Content="IsEditable"      IsChecked="{Binding IsEditable}"/>
         <CheckBox Content="IsReadOnly"      IsChecked="{Binding IsReadOnly}"/>
         <CheckBox Content="ShowClearButton" IsChecked="{Binding ShowClearButton}"/>
-
-        <StackPanel Spacing="4">
-          <TextBlock Text="MaxSelectedItems  (-1 = unlimited)"/>
-          <NumericUpDown Value="{Binding MaxSelectedItems}"
-                         Minimum="-1" Maximum="10" Increment="1" FormatString="0"/>
-        </StackPanel>
-
-        <CheckBox Content="InterceptKeyboardSelection" IsChecked="{Binding InterceptKeyboardSelection}"/>
-        <CheckBox Content="InterceptMouseWheelSelection" IsChecked="{Binding InterceptMouseWheelSelection}"/>
-
+        
         <StackPanel Spacing="4">
           <TextBlock Text="OrderSelectedItemsBy"/>
           <ComboBox ItemsSource="{Binding OrderTypes}" SelectedItem="{Binding OrderSelectedItemsBy}"/>

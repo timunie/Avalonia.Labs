@@ -857,7 +857,7 @@ public class MultiSelectionComboBox : ListBox
         // in multiple-selection mode, splitting Text is not defined and DoSelectItemsFromText
         // would clear ALL selections (position stays 0, cleanup loop removes everything).
         if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
         {
             DoSelectItemsFromText(true);
         }
@@ -879,7 +879,7 @@ public class MultiSelectionComboBox : ListBox
         if (millisecondsToWait == 0 && _isUserDefinedTextInputPending)
         {
             if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-                (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+                (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
             {
                 DoSelectItemsFromText(true);
             }
@@ -898,7 +898,7 @@ public class MultiSelectionComboBox : ListBox
         }
 
         if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
         {
             _updateSelectedItemsFromTextTimer.Interval =
                 TimeSpan.FromMilliseconds(millisecondsToWait);
@@ -1287,7 +1287,7 @@ public class MultiSelectionComboBox : ListBox
         // properties (ItemsSource, Text, SelectedItems) still point to the OLD ViewModel.
         if (_isUserDefinedTextInputPending && !_isTextChanging &&
             (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
         {
             DoSelectItemsFromText(true);
         }
@@ -1348,7 +1348,7 @@ public class MultiSelectionComboBox : ListBox
 
             if (!hasExistingSelection &&
                 (ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-                (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+                (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
             {
                 DoSelectItemsFromText(true);
             }
@@ -1382,7 +1382,7 @@ public class MultiSelectionComboBox : ListBox
                 // separator in Multiple mode, the cleanup loop in DoSelectItemsFromText runs
                 // from position=0 and unconditionally removes all selected items.
                 if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-                    (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+                    (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
                 {
                     DoSelectItemsFromText(true);
                 }
@@ -1455,7 +1455,7 @@ public class MultiSelectionComboBox : ListBox
         // in multiple-selection mode, splitting Text is not defined and DoSelectItemsFromText
         // would clear ALL selections (position stays 0, cleanup loop removes everything).
         if ((ObjectToStringComparer is not null || StringToObjectParser is not null) &&
-            (!string.IsNullOrEmpty(Separator) || SelectionMode == SelectionMode.Single))
+            (!string.IsNullOrEmpty(Separator) || !SelectionMode.HasFlag(SelectionMode.Multiple)))
         {
             DoSelectItemsFromText(true);
         }
