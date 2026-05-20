@@ -1,32 +1,29 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.Labs.Controls;
 using Xunit;
 
-namespace Avalonia.Labs.Controls.Tests.MultiSelectionComboBox;
+// ReSharper disable once CheckNamespace
+namespace Avalonia.Labs.Tests;
 
 public class MultiSelectionComboBoxTests
 {
-    private static async Task<Controls.MultiSelectionComboBox> CreateLoadedAsync(
-        Action<Controls.MultiSelectionComboBox>? configure = null)
+    private static async Task<MultiSelectionComboBox> CreateLoadedAsync(
+        Action<MultiSelectionComboBox>? configure = null)
     {
         var (mscb, _) = await CreateLoadedWithWindowAsync(configure);
         return mscb;
     }
 
-    private static async Task<(Controls.MultiSelectionComboBox Mscb, Window Window)> CreateLoadedWithWindowAsync(
-        Action<Controls.MultiSelectionComboBox>? configure = null)
+    private static async Task<(MultiSelectionComboBox Mscb, Window Window)> CreateLoadedWithWindowAsync(
+        Action<MultiSelectionComboBox>? configure = null)
     {
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -45,7 +42,7 @@ public class MultiSelectionComboBoxTests
     // ─── HasCustomText ───────────────────────────────────────────────────────
 
     [AvaloniaFact]
-    public async Task HasCustomText_IsFlase_WhenTextIsNullAndItemsSelected()
+    public async Task HasCustomText_IsFalse_WhenTextIsNullAndItemsSelected()
     {
         var mscb = await CreateLoadedAsync(m =>
         {
@@ -113,7 +110,7 @@ public class MultiSelectionComboBoxTests
     }
 
     [AvaloniaFact]
-    public async Task HasCustomText_BecomesFlase_WhenTextClearedAfterTyping()
+    public async Task HasCustomText_BecomesFalse_WhenTextClearedAfterTyping()
     {
         var mscb = await CreateLoadedAsync(m =>
         {
@@ -714,7 +711,7 @@ public class MultiSelectionComboBoxTests
         {
             m.ItemsSource = items;
             m.ObjectToStringComparer = DefaultObjectToStringComparer.Instance;
-            // No StringToObjectParser set
+            m.StringToObjectParser = null; // No StringToObjectParser set
             m.SelectItemsFromTextInputDelay = 0;
         });
 
@@ -861,10 +858,10 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = null,
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -875,7 +872,7 @@ public class MultiSelectionComboBoxTests
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -898,13 +895,14 @@ public class MultiSelectionComboBoxTests
 
         // The commit must happen synchronously inside OnDataContextBeginUpdate,
         // so vm1SelectedItems is populated without any additional dispatcher pump.
-        var vm1Selected = vm1SelectedItems.Cast<object>().Select(o => o!.ToString()).ToList();
+        var vm1Selected = vm1SelectedItems.Select(o => o.ToString()).ToList();
         Assert.Contains("Apple", vm1Selected);
         Assert.Contains("Cherry", vm1Selected);
         Assert.DoesNotContain("Banana", vm1Selected);
     }
 
 
+    /// <summary>
     /// The user types text into the MSCB while VM1 is active, then clicks a different item in
     /// the left-hand list — the ContentControl swaps its DataContext to VM2, which already has
     /// a <c>Text</c> that should map to a specific selection.
@@ -923,7 +921,7 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = "Banana",
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
         // VM2: this VM's Text should drive the MSCB to select "Apple" and "Cherry".
@@ -931,10 +929,10 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = "Apple, Cherry",
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -944,7 +942,7 @@ public class MultiSelectionComboBoxTests
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -983,7 +981,7 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = null,
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
         // VM2 has Cherry selected, but Text still shows "Apple" from previous custom input.
@@ -995,7 +993,7 @@ public class MultiSelectionComboBoxTests
             SelectedItems = vm2SelectedItems,
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1005,7 +1003,7 @@ public class MultiSelectionComboBoxTests
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -1043,7 +1041,7 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = "Banana",
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
         // VM2: Cherry is already selected; Text = "Apple" is stale/custom input from a
@@ -1056,7 +1054,7 @@ public class MultiSelectionComboBoxTests
             SelectedItems = vm2SelectedItems,
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1067,7 +1065,7 @@ public class MultiSelectionComboBoxTests
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -1096,6 +1094,7 @@ public class MultiSelectionComboBoxTests
     }
 
 
+    /// <summary>
     /// only in case must NOT match and therefore must not drive a selection on DataContext swap.
     /// </summary>
     [AvaloniaFact]
@@ -1107,7 +1106,7 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = null,
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
         // Text is lowercase — should NOT match "Apple" under Ordinal comparison.
@@ -1115,20 +1114,20 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = "apple",
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
             IsEditable = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
-            EditableTextStringComparision = StringComparison.Ordinal,
+            EditableTextStringComparison = StringComparison.Ordinal,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -1156,27 +1155,27 @@ public class MultiSelectionComboBoxTests
         {
             Items = items,
             Text = null,
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
         var vm2 = new DataContextVm
         {
             Items = items,
             Text = "apple",  // lowercase — matches under OrdinalIgnoreCase
-            SelectedItems = new ObservableCollection<object>(),
+            SelectedItems = [],
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
             IsEditable = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
-            EditableTextStringComparision = StringComparison.OrdinalIgnoreCase,
+            EditableTextStringComparison = StringComparison.OrdinalIgnoreCase,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty,
             new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty,
+        mscb.Bind(MultiSelectionComboBox.TextProperty,
             new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty,
             new Binding(nameof(DataContextVm.SelectedItems)));
@@ -1229,7 +1228,7 @@ public class MultiSelectionComboBoxTests
             SelectedItems = vm2SelectedItems,
         };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1265,17 +1264,17 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = "Banana", SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = "Banana", SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Single,
             IsEditable = true,
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
 
         mscb.DataContext = vm1;
         var window = new Window { Content = mscb, Width = 400, Height = 60 };
@@ -1297,10 +1296,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = "Apple, Cherry", SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = "Apple, Cherry", SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1309,7 +1308,7 @@ public class MultiSelectionComboBoxTests
             // SelectItemsFromTextInputDelay is left at its default of -1
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1333,10 +1332,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = "Cherry", SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, Text = null, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = "Cherry", SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1345,7 +1344,7 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1368,10 +1367,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = null, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = null, SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1379,7 +1378,7 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -1478,10 +1477,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1507,10 +1506,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple", "Cherry" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Apple", "Cherry"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1536,10 +1535,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Single,
             IsEditable = false,
@@ -1564,10 +1563,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Apple"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1595,10 +1594,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1633,10 +1632,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1651,7 +1650,7 @@ public class MultiSelectionComboBoxTests
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
         // Simulate the internal state that UpdateEditableText produces when VM1 has selections.
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple");
         Assert.Equal("Apple", mscb.Text); // sanity
 
         mscb.DataContext = vm2;
@@ -1669,10 +1668,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Cherry" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Cherry"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1686,7 +1685,7 @@ public class MultiSelectionComboBoxTests
         window.Show();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple, Banana");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple, Banana");
 
         mscb.DataContext = vm2;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
@@ -1700,10 +1699,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1717,7 +1716,7 @@ public class MultiSelectionComboBoxTests
         window.Show();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple");
 
         mscb.DataContext = vm2;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
@@ -1731,10 +1730,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1748,7 +1747,7 @@ public class MultiSelectionComboBoxTests
         window.Show();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple");
 
         mscb.DataContext = vm2;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
@@ -1767,10 +1766,10 @@ public class MultiSelectionComboBoxTests
         var items = new List<string> { "Apple", "Banana" };
 
         var vm2SelectedItems = new ObservableCollection<object>();
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
         var vm2 = new DataContextVm { Items = items, SelectedItems = vm2SelectedItems };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1785,7 +1784,7 @@ public class MultiSelectionComboBoxTests
         window.Show();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple");
 
         mscb.DataContext = vm2;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
@@ -1812,10 +1811,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = ["Apple"] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1841,10 +1840,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = ["Apple"] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1875,10 +1874,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Banana" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = ["Apple"] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Banana"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1910,10 +1909,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Single,
             IsEditable = false,
@@ -1926,7 +1925,7 @@ public class MultiSelectionComboBoxTests
         window.Show();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
-        mscb.SetCurrentValue(Controls.MultiSelectionComboBox.TextProperty, "Apple");
+        mscb.SetCurrentValue(MultiSelectionComboBox.TextProperty, "Apple");
 
         mscb.DataContext = vm2;
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
@@ -1943,10 +1942,10 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana", "Cherry" };
 
-        var vm1 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Apple" } };
-        var vm2 = new DataContextVm { Items = items, SelectedItems = new ObservableCollection<object> { "Cherry" } };
+        var vm1 = new DataContextVm { Items = items, SelectedItems = ["Apple"] };
+        var vm2 = new DataContextVm { Items = items, SelectedItems = ["Cherry"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -1975,17 +1974,17 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, Text = null,  SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = "App", SelectedItems = new ObservableCollection<object>() };
+        var vm1 = new DataContextVm { Items = items, Text = null,  SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = "App", SelectedItems = [] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
             IsEditable = true,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -2008,17 +2007,17 @@ public class MultiSelectionComboBoxTests
     {
         var items = new List<string> { "Apple", "Banana" };
 
-        var vm1 = new DataContextVm { Items = items, Text = null,    SelectedItems = new ObservableCollection<object>() };
-        var vm2 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = new ObservableCollection<object> { "Apple" } };
+        var vm1 = new DataContextVm { Items = items, Text = null,    SelectedItems = [] };
+        var vm2 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = ["Apple"] };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
             IsEditable = true,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;
@@ -2032,8 +2031,6 @@ public class MultiSelectionComboBoxTests
         Assert.Equal("Apple", mscb.Text);
         Assert.False(mscb.HasCustomText);
     }
-
-    // ─── Separator change ─────────────────────────────────────────────────────
 
     // ─── Separator change ─────────────────────────────────────────────────────
 
@@ -2195,7 +2192,7 @@ public class MultiSelectionComboBoxTests
         {
             m.ItemsSource = new List<string> { "Apple", "Banana", "Cherry" };
             m.SelectItemsFromTextInputDelay = 0;
-            // ObjectToStringComparer intentionally NOT set.
+            m.ObjectToStringComparer = null;
         });
 
         mscb.Selection.Select(0); // Apple
@@ -2288,7 +2285,7 @@ public class MultiSelectionComboBoxTests
         var vm2SelectedItems = new ObservableCollection<object> { "Cherry" };
         var vm2 = new DataContextVm { Items = items, Text = "Apple", SelectedItems = vm2SelectedItems };
 
-        var mscb = new Controls.MultiSelectionComboBox
+        var mscb = new MultiSelectionComboBox
         {
             SelectionMode = SelectionMode.Multiple,
             Separator = ", ",
@@ -2296,7 +2293,7 @@ public class MultiSelectionComboBoxTests
             ObjectToStringComparer = DefaultObjectToStringComparer.Instance,
         };
         mscb.Bind(ItemsControl.ItemsSourceProperty, new Binding(nameof(DataContextVm.Items)));
-        mscb.Bind(Controls.MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
+        mscb.Bind(MultiSelectionComboBox.TextProperty, new Binding(nameof(DataContextVm.Text)));
         mscb.Bind(ListBox.SelectedItemsProperty, new Binding(nameof(DataContextVm.SelectedItems)));
 
         mscb.DataContext = vm1;

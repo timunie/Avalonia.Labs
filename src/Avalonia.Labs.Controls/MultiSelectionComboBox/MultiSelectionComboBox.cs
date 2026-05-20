@@ -337,19 +337,19 @@ public class MultiSelectionComboBox : ListBox
     }
 
     /// <summary>
-    /// Defines the <see cref="EditableTextStringComparision" /> property
+    /// Defines the <see cref="EditableTextStringComparison" /> property
     /// </summary>
-    public static readonly StyledProperty<StringComparison> EditableTextStringComparisionProperty =
-        AvaloniaProperty.Register<MultiSelectionComboBox, StringComparison>(nameof(EditableTextStringComparision),
+    public static readonly StyledProperty<StringComparison> EditableTextStringComparisonProperty =
+        AvaloniaProperty.Register<MultiSelectionComboBox, StringComparison>(nameof(EditableTextStringComparison),
             StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     ///  Gets or Sets the <see cref="StringComparison"/> that is used to check if the entered <see cref="Text"/> matches to the <see cref="ListBox.SelectedItems"/>
     /// </summary>
-    public StringComparison EditableTextStringComparision
+    public StringComparison EditableTextStringComparison
     {
-        get => GetValue(EditableTextStringComparisionProperty);
-        set => SetValue(EditableTextStringComparisionProperty, value);
+        get => GetValue(EditableTextStringComparisonProperty);
+        set => SetValue(EditableTextStringComparisonProperty, value);
     }
 
     /// <summary>
@@ -359,7 +359,8 @@ public class MultiSelectionComboBox : ListBox
         AvaloniaProperty.Register<MultiSelectionComboBox, IParseStringToObject?>(nameof(StringToObjectParser));
 
     /// <summary>
-    /// comment
+    /// This property is used to provide a parser that converts a string to an object.
+    /// You can provide your own <see cref="IParseStringToObject"/> implementation to have full control over string-to-object conversion.
     /// </summary>
     public IParseStringToObject? StringToObjectParser
     {
@@ -814,7 +815,7 @@ public class MultiSelectionComboBox : ListBox
             return;
         }
 
-        HasCustomText = !string.Equals(Text, selectedItemsText, EditableTextStringComparision);
+        HasCustomText = !string.Equals(Text, selectedItemsText, EditableTextStringComparison);
     }
 
     private void UpdateDisplaySelectedItems(SelectedItemsOrderType selectedItemsOrderType)
@@ -959,7 +960,7 @@ public class MultiSelectionComboBox : ListBox
                         foreach (var item in Items)
                         {
                             if (ObjectToStringComparer.CheckIfStringMatchesObject(stringObject, item,
-                                    EditableTextStringComparision, SelectedItemStringFormat))
+                                    EditableTextStringComparison, SelectedItemStringFormat))
                             {
                                 var oldPosition = SelectedItems.IndexOf(item);
 
@@ -1030,7 +1031,7 @@ public class MultiSelectionComboBox : ListBox
                 foreach (var item in Items)
                 {
                     if (ObjectToStringComparer.CheckIfStringMatchesObject(Text, item,
-                            EditableTextStringComparision, SelectedItemStringFormat))
+                            EditableTextStringComparison, SelectedItemStringFormat))
                     {
                         SetCurrentValue(SelectedItemProperty, item);
                         foundItem = true;
@@ -1130,7 +1131,7 @@ public class MultiSelectionComboBox : ListBox
                 addingItemEventArgs.Accepted = false;
             }
 
-            // If the adding event was not handled and the item is marked as accepted and we are allowed to modify the items list we can add the pared item
+            // If the adding event was not handled and the item is marked as accepted and we are allowed to modify the items list we can add the parsed item
             if (addingItemEventArgs.Accepted && (!addingItemEventArgs.TargetList?.IsReadOnly ?? false))
             {
                 addingItemEventArgs.TargetList?.Add(addingItemEventArgs.ParsedObject);
@@ -1566,7 +1567,7 @@ public class MultiSelectionComboBox : ListBox
         // Refresh display text and HasCustomText when any formatting/matching property changes.
         if (e.Property == ItemsControl.DisplayMemberBindingProperty ||
             e.Property == SelectedItemStringFormatProperty ||
-            e.Property == EditableTextStringComparisionProperty)
+            e.Property == EditableTextStringComparisonProperty)
         {
             UpdateDisplaySelectedItems();
             UpdateEditableText();

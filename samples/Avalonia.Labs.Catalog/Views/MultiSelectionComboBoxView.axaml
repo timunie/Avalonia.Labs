@@ -65,7 +65,6 @@
               ShowClearButton="{Binding ShowClearButton}"
               OrderSelectedItemsBy="{Binding OrderSelectedItemsBy}"
               SelectItemsFromTextInputDelay="{Binding SelectItemsFromTextInputDelay}"
-              ObjectToStringComparer=""
               Separator=", "
               PlaceholderText="Select frameworks…"/>
         </StackPanel>

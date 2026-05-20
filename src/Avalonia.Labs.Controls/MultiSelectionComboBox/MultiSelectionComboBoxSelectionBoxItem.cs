@@ -22,7 +22,7 @@ public class MultiSelectionComboBoxSelectionBoxItem : ContentControl
         AvaloniaProperty.Register<MultiSelectionComboBoxSelectionBoxItem, bool>(nameof(ShowRemoveButton));
 
     /// <summary>
-    /// Gets or sets wether the remove button should be visible
+    /// Gets or sets whether the remove button should be visible
     /// </summary>
     public bool ShowRemoveButton
     {
