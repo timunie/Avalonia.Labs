@@ -33,6 +33,12 @@
                           FontSize="10"
                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                           HorizontalAlignment="Center"/>
+              <TextBlock HorizontalAlignment="Center" FontSize="10">
+                <TextBlock.Inlines>
+                  <Run Text="State:"/>
+                  <Run Text="{Binding #DemoSwipe.SwipeState}" FontWeight="Bold"/>
+                </TextBlock.Inlines>
+              </TextBlock>
             </StackPanel>
           </Border>
           <labs:Swipe.Right>
@@ -86,6 +92,7 @@
           <Button Content="Open Top" Click="OpenTop" />
           <Button Content="Open Bottom" Click="OpenBottom" />
           <Button Content="Close" Click="CloseSwipe" />
+          <Button Content="Disable" Click="DisableEnableSwipe"/>
         </WrapPanel>
       </StackPanel>
 

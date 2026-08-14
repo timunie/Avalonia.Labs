@@ -67,6 +67,22 @@ namespace Avalonia.Labs.Catalog.Views
             }
         }
 
+        private void DisableEnableSwipe(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<Swipe>("DemoSwipe") is { } demoswipe)
+            {
+                demoswipe.IsSwipeEnabled = !demoswipe.IsSwipeEnabled;
+                if (sender is Button button)
+                {
+                    button.Content = demoswipe.IsSwipeEnabled switch
+                    {
+                        true => "Disable",
+                        false => "Enable"
+                    };
+                }
+            }
+        }
+
         private void DemoSwipe_OpenRequested(object? sender, OpenRequestedEventArgs e)
         {
             var eventLog = this.FindControl<TextBlock>("EventLog");
