@@ -1,18 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
   <PropertyGroup>
+    <TargetFramework>net10.0-browser</TargetFramework>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-browser</TargetFramework>
-    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
-    <WasmMainJSPath>wwwroot\main.js</WasmMainJSPath>
-    <WasmRuntimeAssetsLocation>./_framework</WasmRuntimeAssetsLocation>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <WasmExtraFilesToDeploy Include="wwwroot\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia.Browser" Version="$(AvaloniaSampleVersion)" />
+    <PackageReference Include="Avalonia.Browser" VersionOverride="$(AvaloniaSampleVersion)" />
   </ItemGroup>
 
   <ItemGroup>
