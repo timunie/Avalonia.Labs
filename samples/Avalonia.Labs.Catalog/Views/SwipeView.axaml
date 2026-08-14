@@ -19,24 +19,22 @@
         <labs:Swipe x:Name="DemoSwipe" Margin="0,5"
                     OpenRequested="DemoSwipe_OpenRequested"
                     CloseRequested="DemoSwipe_CloseRequested">
-          <labs:Swipe.Content>
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    Padding="20"
-                    CornerRadius="4"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                    BorderThickness="1">
-              <StackPanel Spacing="5">
-                <TextBlock Text="Swipe me or use the buttons below"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Center"/>
-                <TextBlock x:Name="EventLog"
-                           Text="Event log will appear here"
-                           FontSize="10"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                           HorizontalAlignment="Center"/>
-              </StackPanel>
-            </Border>
-          </labs:Swipe.Content>
+          <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                  Padding="20"
+                  CornerRadius="4"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                  BorderThickness="1">
+            <StackPanel Spacing="5">
+              <TextBlock Text="Swipe me or use the buttons below"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Center"/>
+              <TextBlock x:Name="EventLog"
+                          Text="Event log will appear here"
+                          FontSize="10"
+                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Border>
           <labs:Swipe.Right>
             <DataTemplate>
               <StackPanel Orientation="Horizontal" Spacing="5">
@@ -99,17 +97,15 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <labs:Swipe Margin="5">
-            <labs:Swipe.Content>
-              <StackPanel Orientation="Horizontal" Spacing="5" Background="Transparent">
-                <StackPanel.GestureRecognizers>
-                  <base:TapGestureRecognizer OnTap="TapGestureRecognizer_OnOnTap" />
-                </StackPanel.GestureRecognizers>
-                <Border Background="Red" Width="64" Height="64" />
-                <Border Background="Red" Width="64" Height="64" />
-                <Border Background="Red" Width="64" Height="64" />
-                <Label Content="You can swipe or click on the item"/>
-              </StackPanel>
-            </labs:Swipe.Content>
+            <StackPanel Orientation="Horizontal" Spacing="5" Background="Transparent">
+              <StackPanel.GestureRecognizers>
+                <base:TapGestureRecognizer OnTap="TapGestureRecognizer_OnOnTap" />
+              </StackPanel.GestureRecognizers>
+              <Border Background="Red" Width="64" Height="64" />
+              <Border Background="Red" Width="64" Height="64" />
+              <Border Background="Red" Width="64" Height="64" />
+              <Label Content="You can swipe or click on the item"/>
+            </StackPanel>
             <labs:Swipe.Right>
               <DataTemplate>
                 <StackPanel Orientation="Horizontal" Spacing="5">
