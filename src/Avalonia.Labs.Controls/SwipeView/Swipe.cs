@@ -13,7 +13,7 @@ using Avalonia.Threading;
 
 namespace Avalonia.Labs.Controls;
 
-// <summary>
+/// <summary>
 /// A control that provides swipe gestures to reveal items behind the main content.
 /// Supports swiping in all four directions.
 /// </summary>
