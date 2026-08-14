@@ -129,6 +129,7 @@ public class Swipe : Grid
     /// <summary>
     /// Gets or sets the primary content of the Swipe component that covers the swipe items.
     /// </summary>
+    [Metadata.Content]
     public Control? Content
     {
         get => GetValue(ContentProperty);
