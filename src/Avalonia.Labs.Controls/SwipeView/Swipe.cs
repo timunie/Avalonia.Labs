@@ -826,6 +826,8 @@ public class Swipe : Grid
     }
 
     /// <summary>
+    /// 
+    /// </summary>
     internal void SetSwipeState(SwipeState targetState, bool animated = true)
     {
         if (!IsSwipeEnabled)
