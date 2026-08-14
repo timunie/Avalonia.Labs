@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Templates;
+using Avalonia.Threading;
 using Xunit;
 
 namespace Avalonia.Labs.Controls.Tests;
@@ -836,5 +838,35 @@ public class SwipeTests
         var defaultValue = Swipe.BottomModeProperty.GetDefaultValue(typeof(Swipe));
 
         Assert.Equal(SwipeMode.Reveal, defaultValue);
+    }
+
+
+    [Fact]
+    public void Direct_child_element_syntax_in_XAML()
+    {
+        // If Dispatcher has a thread, invoke on it
+        var xaml = $"""
+            <labs:Swipe xmlns="https://github.com/avaloniaui"
+                xmlns:labs="using:Avalonia.Labs.Controls">
+                <TextBlock Text="Direct Child Content" />
+            </labs:Swipe>
+            """;
+
+        Swipe? swipe = null;
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            swipe = AvaloniaRuntimeXamlLoader.Load(xaml) as Swipe;
+        }
+        else
+        {
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                swipe = AvaloniaRuntimeXamlLoader.Load(xaml) as Swipe;
+            });
+        }
+
+        Assert.NotNull(swipe);
+        var tb = Assert.IsType<TextBlock>(swipe.Content);
+        Assert.Equal("Direct Child Content", tb.Text);
     }
 }
