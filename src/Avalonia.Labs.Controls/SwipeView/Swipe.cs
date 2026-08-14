@@ -29,6 +29,24 @@ public class Swipe : Grid
     private const double DefaultThreshold = 100.0;
 
     /// <summary>
+    /// Defines the <see cref="IsSwipeEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSwipeEnabledProperty =
+        AvaloniaProperty.Register<Swipe, bool>(nameof(IsSwipeEnabled), true);
+
+    /// <summary>
+    /// Gets or sets a value indicating whether swipe gestures are enabled.
+    /// </summary>
+    /// <remarks>
+    /// When <see cref="IsSwipeEnabled"/> is <see langword="false"/>, programmatic swiping continues to work. It only disables gestures with mouse, touch, pen, and keyboard.
+    /// </remarks>
+    public bool IsSwipeEnabled
+    {
+        get => GetValue(IsSwipeEnabledProperty);
+        set => SetValue(IsSwipeEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Defines the <see cref="Threshold"/> property.
     /// </summary>
     public static readonly StyledProperty<double> ThresholdProperty =
@@ -58,7 +76,6 @@ public class Swipe : Grid
         get => GetValue(AnimationDurationProperty);
         set => SetValue(AnimationDurationProperty, value);
     }
-
 
     /// <summary>
     /// Defines the <see cref="Right"/> property.
@@ -597,6 +614,8 @@ public class Swipe : Grid
 
     private void PanUpdated(object? sender, PanUpdatedEventArgs e)
     {
+        if (!IsSwipeEnabled)
+            return;
         switch (e.StatusType)
         {
             case PanGestureStatus.Started:
@@ -743,6 +762,8 @@ public class Swipe : Grid
 
     private void HandlePanCompleted(PanUpdatedEventArgs e)
     {
+        if (!IsSwipeEnabled)
+            return;
         var finalX = _isHorizontalSwipe ? _initialX + e.TotalX : _initialX;
         var finalY = _isVerticalSwipe ? _initialY + e.TotalY : _initialY;
         
@@ -807,6 +828,8 @@ public class Swipe : Grid
     /// <summary>
     internal void SetSwipeState(SwipeState targetState, bool animated = true)
     {
+        if (!IsSwipeEnabled)
+            return;
         var requested = targetState;
         if (requested != SwipeState.Hidden)
         {
