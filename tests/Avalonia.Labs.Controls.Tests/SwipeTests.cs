@@ -1,5 +1,8 @@
+using System.Reflection;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Labs.Controls.Base.Pan;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Threading;
@@ -868,5 +871,253 @@ public class SwipeTests
         Assert.NotNull(swipe);
         var tb = Assert.IsType<TextBlock>(swipe.Content);
         Assert.Equal("Direct Child Content", tb.Text);
+    }
+
+ 
+    [Fact]
+    public void When_IsSwipeEnabled_Is_False_Programmatic_Swiping_Continues_To_Work()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false
+        };
+
+        // Setting SwipeState directly should work even when IsSwipeEnabled is false
+        swipe.SwipeState = SwipeState.LeftVisible;
+        Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
+
+        swipe.SwipeState = SwipeState.RightVisible;
+        Assert.Equal(SwipeState.RightVisible, swipe.SwipeState);
+
+        swipe.SwipeState = SwipeState.TopVisible;
+        Assert.Equal(SwipeState.TopVisible, swipe.SwipeState);
+
+        swipe.SwipeState = SwipeState.BottomVisible;
+        Assert.Equal(SwipeState.BottomVisible, swipe.SwipeState);
+
+        swipe.SwipeState = SwipeState.Hidden;
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void When_IsSwipeEnabled_Is_False_Keyboard_Gestures_Are_Disabled()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false
+        };
+
+        var openRequestedCount = 0;
+        swipe.OpenRequested += (_, _) => openRequestedCount++;
+
+        // Try to open with Ctrl+Left
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Left,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(0, openRequestedCount);
+
+        // Try to open with Ctrl+Right
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Right,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(0, openRequestedCount);
+
+        // Try to open with Ctrl+Up
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Up,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(0, openRequestedCount);
+
+        // Try to open with Ctrl+Down
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Down,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(0, openRequestedCount);
+    }
+
+    [Fact]
+    public void When_IsSwipeEnabled_Is_False_Escape_Key_Is_Disabled()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false,
+            SwipeState = SwipeState.LeftVisible
+        };
+
+        var closeRequestedCount = 0;
+        swipe.CloseRequested += (_, _) => closeRequestedCount++;
+
+        // Press Escape - should not close when IsSwipeEnabled is false
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Escape
+        });
+
+        Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
+        Assert.Equal(0, closeRequestedCount);
+    }
+
+    [Fact]
+    public void When_IsSwipeEnabled_Is_True_Keyboard_Gestures_Are_Enabled()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = true
+        };
+
+        var openedItems = new List<OpenSwipeItem>();
+        swipe.OpenRequested += (_, e) => openedItems.Add(e.OpenSwipeItem);
+
+        // Ctrl+Left -> LeftVisible
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Left,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
+        Assert.Contains(OpenSwipeItem.LeftItems, openedItems);
+
+        // Ctrl+Right -> RightVisible
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Right,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.RightVisible, swipe.SwipeState);
+        Assert.Contains(OpenSwipeItem.RightItems, openedItems);
+
+        // Ctrl+Up -> TopVisible
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Up,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.TopVisible, swipe.SwipeState);
+        Assert.Contains(OpenSwipeItem.TopItems, openedItems);
+
+        // Ctrl+Down -> BottomVisible
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Down,
+            KeyModifiers = KeyModifiers.Control
+        });
+        Assert.Equal(SwipeState.BottomVisible, swipe.SwipeState);
+        Assert.Contains(OpenSwipeItem.BottomItems, openedItems);
+
+        // Escape -> Hidden
+        var closeRequestedCount = 0;
+        swipe.CloseRequested += (_, _) => closeRequestedCount++;
+        swipe.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Escape
+        });
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(1, closeRequestedCount);
+    }
+
+    [Fact]
+    public void When_IsSwipeEnabled_Is_False_SetSwipeState_Does_Nothing()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false
+        };
+
+        var openRequestedCount = 0;
+        swipe.OpenRequested += (_, _) => openRequestedCount++;
+
+        var setSwipeStateMethod = typeof(Swipe).GetMethod("SetSwipeState", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(setSwipeStateMethod);
+
+        setSwipeStateMethod.Invoke(swipe, new object[] { SwipeState.LeftVisible, true });
+
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Equal(0, openRequestedCount);
+    }
+
+  
+    [Fact]
+    public void When_IsSwipeEnabled_Is_False_Pan_Gestures_Are_Disabled()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false
+        };
+
+        var swipeStarted = false;
+        var swipeChanging = false;
+        var swipeEnded = false;
+
+        swipe.SwipeStarted += (_, _) => swipeStarted = true;
+        swipe.SwipeChanging += (_, _) => swipeChanging = true;
+        swipe.SwipeEnded += (_, _) => swipeEnded = true;
+
+        var panUpdatedMethod = typeof(Swipe).GetMethod("PanUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(panUpdatedMethod);
+
+        // Simulate Started
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Started, 0, 0)]);
+        // Simulate Running
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Running, 50, 0)]);
+        // Simulate Completed
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Completed, 150, 0)]);
+
+        Assert.False(swipeStarted);
+        Assert.False(swipeChanging);
+        Assert.False(swipeEnded);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void When_IsSwipeEnabled_Is_True_Pan_Gestures_Are_Processed()
+    {
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = true
+        };
+
+        var swipeStarted = false;
+        var swipeChanging = false;
+        var swipeEnded = false;
+
+        swipe.SwipeStarted += (_, _) => swipeStarted = true;
+        swipe.SwipeChanging += (_, _) => swipeChanging = true;
+        swipe.SwipeEnded += (_, _) => swipeEnded = true;
+
+        var panUpdatedMethod = typeof(Swipe).GetMethod("PanUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(panUpdatedMethod);
+
+        // Simulate Started
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Started, 0, 0)]);
+        // Simulate Running with offset beyond DirectionLockThreshold (5)
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Running, 50, 0)]);
+        // Simulate Completed
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Completed, 150, 0)]);
+
+        Assert.True(swipeStarted);
+        Assert.True(swipeChanging);
+        Assert.True(swipeEnded);
     }
 }
