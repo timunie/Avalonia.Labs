@@ -85,19 +85,17 @@ namespace Avalonia.Labs.Catalog.Views
 
         private void DemoSwipe_OpenRequested(object? sender, OpenRequestedEventArgs e)
         {
-            var eventLog = this.FindControl<TextBlock>("EventLog");
-            if (eventLog != null)
+            if(DataContext is ViewModels.SwipeViewModel vm)
             {
-                eventLog.Text = $"OpenRequested: {e.OpenSwipeItem}";
-            }
+                vm.LastEvent = $"OpenRequested: {e.OpenSwipeItem}";
+            } 
         }
 
         private void DemoSwipe_CloseRequested(object? sender, CloseRequestedEventArgs e)
         {
-            var eventLog = this.FindControl<TextBlock>("EventLog");
-            if (eventLog != null)
+            if (DataContext is ViewModels.SwipeViewModel vm)
             {
-                eventLog.Text = "CloseRequested";
+                vm.LastEvent = "CloseRequested";
             }
         }
     }

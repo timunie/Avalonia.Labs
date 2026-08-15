@@ -18,7 +18,20 @@
 
         <labs:Swipe x:Name="DemoSwipe" Margin="0,5"
                     OpenRequested="DemoSwipe_OpenRequested"
-                    CloseRequested="DemoSwipe_CloseRequested">
+                    CloseRequested="DemoSwipe_CloseRequested"
+                    LeftMode="{Binding SwipeMode}"
+                    TopMode="{Binding SwipeMode}"
+                    RightMode="{Binding SwipeMode}"
+                    BottomMode="{Binding SwipeMode}"
+                    LeftCommand="{Binding SwipeCommand, Mode=OneWay}"
+                    LeftCommandParameter="Left"
+                    RightCommand="{Binding SwipeCommand, Mode=OneWay}"
+                    RightCommandParameter="Right"
+                    TopCommand="{Binding SwipeCommand, Mode=OneWay}"
+                    TopCommandParameter="Top"
+                    BottomCommand="{Binding SwipeCommand, Mode=OneWay}"
+                    BottomCommandParameter="Bottom"
+                    >
           <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                   Padding="20"
                   CornerRadius="4"
@@ -29,7 +42,7 @@
                           VerticalAlignment="Center"
                           HorizontalAlignment="Center"/>
               <TextBlock x:Name="EventLog"
-                          Text="Event log will appear here"
+                          Text="{Binding LastEvent, TargetNullValue=Event log will appear here}"
                           FontSize="10"
                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                           HorizontalAlignment="Center"/>
@@ -93,6 +106,7 @@
           <Button Content="Open Bottom" Click="OpenBottom" />
           <Button Content="Close" Click="CloseSwipe" />
           <Button Content="Disable" Click="DisableEnableSwipe"/>
+          <ToggleButton Content="Execute" IsChecked="{Binding IsExecute, Mode=TwoWay}"/>
         </WrapPanel>
       </StackPanel>
 
