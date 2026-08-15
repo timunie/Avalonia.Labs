@@ -434,6 +434,7 @@ public class Swipe : Grid
     private bool _isHorizontalSwipe;
     private bool _isVerticalSwipe;
     private SwipeDirection _swipeDirection;
+    private bool _isInternalStateChange;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Swipe"/> class.
@@ -557,6 +558,58 @@ public class Swipe : Grid
         }
         else if (e.Property == SwipeStateProperty)
         {
+            var oldState = e.GetOldValue<SwipeState>();
+            var newState = e.GetNewValue<SwipeState>();
+
+            if (!_isInternalStateChange && oldState != newState)
+            {
+                if (newState != SwipeState.Hidden)
+                {
+                    var openItem = newState switch
+                    {
+                        SwipeState.LeftVisible => OpenSwipeItem.LeftItems,
+                        SwipeState.RightVisible => OpenSwipeItem.RightItems,
+                        SwipeState.TopVisible => OpenSwipeItem.TopItems,
+                        SwipeState.BottomVisible => OpenSwipeItem.BottomItems,
+                        _ => OpenSwipeItem.RightItems
+                    };
+
+                    var eventArgs = new OpenRequestedEventArgs(OpenRequestedEvent, openItem);
+                    RaiseEvent(eventArgs);
+                    if (eventArgs.Cancel)
+                    {
+                        _isInternalStateChange = true;
+                        try
+                        {
+                            SetCurrentValue(SwipeStateProperty, oldState);
+                        }
+                        finally
+                        {
+                            _isInternalStateChange = false;
+                        }
+                        return;
+                    }
+                }
+                else
+                {
+                    var eventArgs = new CloseRequestedEventArgs(CloseRequestedEvent);
+                    RaiseEvent(eventArgs);
+                    if (eventArgs.Cancel)
+                    {
+                        _isInternalStateChange = true;
+                        try
+                        {
+                            SetCurrentValue(SwipeStateProperty, oldState);
+                        }
+                        finally
+                        {
+                            _isInternalStateChange = false;
+                        }
+                        return;
+                    }
+                }
+            }
+
             ProcessSwipe(SwipeState);
         }
         else if (e.Property == AnimationDurationProperty)
@@ -892,6 +945,32 @@ public class Swipe : Grid
 
         if (newState != SwipeState.Hidden)
         {
+            if (SwipeState != newState)
+            {
+                var openItem = newState switch
+                {
+                    SwipeState.LeftVisible => OpenSwipeItem.LeftItems,
+                    SwipeState.RightVisible => OpenSwipeItem.RightItems,
+                    SwipeState.TopVisible => OpenSwipeItem.TopItems,
+                    SwipeState.BottomVisible => OpenSwipeItem.BottomItems,
+                    _ => OpenSwipeItem.RightItems
+                };
+
+                var openEventArgs = new OpenRequestedEventArgs(OpenRequestedEvent, openItem);
+                RaiseEvent(openEventArgs);
+                if (openEventArgs.Cancel)
+                {
+                    if (_bodyContainer.Transitions != null && !_bodyContainer.Transitions.Contains(_transition))
+                        _bodyContainer.Transitions.Add(_transition);
+
+                    ProcessSwipe(SwipeState);
+                    RaiseEvent(new SwipeEndedEventArgs(SwipeEndedEvent, _swipeDirection, SwipeState != SwipeState.Hidden));
+                    _isHorizontalSwipe = false;
+                    _isVerticalSwipe = false;
+                    return;
+                }
+            }
+
             SwipeMode activeMode = SwipeMode.Reveal;
             SwipeDirection activeDirection = SwipeDirection.Right;
             ICommand? command = default;
@@ -937,6 +1016,22 @@ public class Swipe : Grid
                 newState = SwipeState.Hidden;
             }
         }
+        else if (SwipeState != SwipeState.Hidden)
+        {
+            var closeEventArgs = new CloseRequestedEventArgs(CloseRequestedEvent);
+            RaiseEvent(closeEventArgs);
+            if (closeEventArgs.Cancel)
+            {
+                if (_bodyContainer.Transitions != null && !_bodyContainer.Transitions.Contains(_transition))
+                    _bodyContainer.Transitions.Add(_transition);
+
+                ProcessSwipe(SwipeState);
+                RaiseEvent(new SwipeEndedEventArgs(SwipeEndedEvent, _swipeDirection, true));
+                _isHorizontalSwipe = false;
+                _isVerticalSwipe = false;
+                return;
+            }
+        }
 
         if (newState == SwipeState.Hidden && SwipeState == SwipeState.Hidden)
         {
@@ -952,7 +1047,15 @@ public class Swipe : Grid
         }
         else
         {
-            SetCurrentValue(SwipeStateProperty, newState);
+            _isInternalStateChange = true;
+            try
+            {
+                SetCurrentValue(SwipeStateProperty, newState);
+            }
+            finally
+            {
+                _isInternalStateChange = false;
+            }
         }
 
         bool isOpen = newState != SwipeState.Hidden;
@@ -963,12 +1066,46 @@ public class Swipe : Grid
     }
 
     /// <summary>
-    /// 
+    /// Opens the swipe control in the specified direction.
+    /// </summary>
+    /// <param name="openSwipeItem">The direction to open.</param>
+    /// <param name="animated">Whether to animate the transition.</param>
+    public void Open(OpenSwipeItem openSwipeItem, bool animated = true)
+    {
+        var targetState = openSwipeItem switch
+        {
+            OpenSwipeItem.LeftItems => SwipeState.LeftVisible,
+            OpenSwipeItem.RightItems => SwipeState.RightVisible,
+            OpenSwipeItem.TopItems => SwipeState.TopVisible,
+            OpenSwipeItem.BottomItems => SwipeState.BottomVisible,
+            _ => SwipeState.Hidden
+        };
+
+        RequestSwipeState(targetState, animated);
+    }
+
+    /// <summary>
+    /// Closes the swipe control.
+    /// </summary>
+    /// <param name="animated">Whether to animate the transition.</param>
+    public void Close(bool animated = true)
+    {
+        RequestSwipeState(SwipeState.Hidden, animated);
+    }
+
+    /// <summary>
+    /// Sets the swipe state with animation.
     /// </summary>
     internal void SetSwipeState(SwipeState targetState, bool animated = true)
     {
         if (!IsSwipeEnabled)
             return;
+
+        RequestSwipeState(targetState, animated);
+    }
+
+    internal bool RequestSwipeState(SwipeState targetState, bool animated = true)
+    {
         var requested = targetState;
         if (requested != SwipeState.Hidden)
         {
@@ -984,20 +1121,30 @@ public class Swipe : Grid
             var eventArgs = new OpenRequestedEventArgs(OpenRequestedEvent, openItem);
             RaiseEvent(eventArgs);
             if (eventArgs.Cancel)
-                return;
+                return false;
         }
         else
         {
             var eventArgs = new CloseRequestedEventArgs(CloseRequestedEvent);
             RaiseEvent(eventArgs);
             if (eventArgs.Cancel)
-                return;
+                return false;
         }
 
         ApplyStateWithAnimationCheck(animated, () =>
         {
-            SetCurrentValue(SwipeStateProperty, requested);
+            _isInternalStateChange = true;
+            try
+            {
+                SetCurrentValue(SwipeStateProperty, requested);
+            }
+            finally
+            {
+                _isInternalStateChange = false;
+            }
         });
+
+        return true;
     }
 
     private void ApplyStateWithAnimationCheck(bool animated, Action action)

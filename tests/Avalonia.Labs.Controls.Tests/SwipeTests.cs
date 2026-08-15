@@ -1394,6 +1394,182 @@ public class SwipeTests
         panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Completed, deltaX, deltaY)]);
     }
 
+    [Theory]
+    [InlineData(150.0, 0.0, OpenSwipeItem.LeftItems, SwipeState.LeftVisible)]
+    [InlineData(-150.0, 0.0, OpenSwipeItem.RightItems, SwipeState.RightVisible)]
+    [InlineData(0.0, 150.0, OpenSwipeItem.TopItems, SwipeState.TopVisible)]
+    [InlineData(0.0, -150.0, OpenSwipeItem.BottomItems, SwipeState.BottomVisible)]
+    public void PanGesture_Raises_OpenRequested_Event(double deltaX, double deltaY, OpenSwipeItem expectedItem, SwipeState expectedState)
+    {
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        swipe.Left = template;
+        swipe.Right = template;
+        swipe.Top = template;
+        swipe.Bottom = template;
+
+        OpenRequestedEventArgs? openArgs = null;
+        swipe.OpenRequested += (_, e) => openArgs = e;
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.NotNull(openArgs);
+        Assert.Equal(expectedItem, openArgs.OpenSwipeItem);
+        Assert.Equal(expectedState, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void PanGesture_OpenRequested_Cancel_Prevents_Opening()
+    {
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        swipe.Left = template;
+
+        var openRequestedFired = false;
+        swipe.OpenRequested += (_, e) =>
+        {
+            openRequestedFired = true;
+            e.Cancel = true;
+        };
+
+        SimulatePanGesture(swipe, 150.0, 0.0);
+
+        Assert.True(openRequestedFired);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void PanGesture_Raises_CloseRequested_Event()
+    {
+        var swipe = new Swipe
+        {
+            SwipeState = SwipeState.LeftVisible
+        };
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        swipe.Left = template;
+
+        var closeRequestedFired = false;
+        swipe.CloseRequested += (_, _) => closeRequestedFired = true;
+
+        // Swiping left to close
+        SimulatePanGesture(swipe, -150.0, 0.0);
+
+        Assert.True(closeRequestedFired);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void PanGesture_CloseRequested_Cancel_Prevents_Closing()
+    {
+        var swipe = new Swipe
+        {
+            SwipeState = SwipeState.LeftVisible
+        };
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        swipe.Left = template;
+
+        var closeRequestedFired = false;
+        swipe.CloseRequested += (_, e) =>
+        {
+            closeRequestedFired = true;
+            e.Cancel = true;
+        };
+
+        // Swiping left to close
+        SimulatePanGesture(swipe, -150.0, 0.0);
+
+        Assert.True(closeRequestedFired);
+        Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
+    }
+
+    [Theory]
+    [InlineData(OpenSwipeItem.LeftItems, SwipeState.LeftVisible)]
+    [InlineData(OpenSwipeItem.RightItems, SwipeState.RightVisible)]
+    [InlineData(OpenSwipeItem.TopItems, SwipeState.TopVisible)]
+    [InlineData(OpenSwipeItem.BottomItems, SwipeState.BottomVisible)]
+    public void Programmatic_Open_Method_Raises_OpenRequested(OpenSwipeItem item, SwipeState expectedState)
+    {
+        var swipe = new Swipe();
+        OpenRequestedEventArgs? openArgs = null;
+        swipe.OpenRequested += (_, e) => openArgs = e;
+
+        swipe.Open(item, false);
+
+        Assert.NotNull(openArgs);
+        Assert.Equal(item, openArgs.OpenSwipeItem);
+        Assert.Equal(expectedState, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void Programmatic_Open_Method_Can_Be_Cancelled()
+    {
+        var swipe = new Swipe();
+        swipe.OpenRequested += (_, e) => e.Cancel = true;
+
+        swipe.Open(OpenSwipeItem.LeftItems, false);
+
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void Programmatic_Close_Method_Raises_CloseRequested()
+    {
+        var swipe = new Swipe
+        {
+            SwipeState = SwipeState.LeftVisible
+        };
+
+        var closeRequestedFired = false;
+        swipe.CloseRequested += (_, _) => closeRequestedFired = true;
+
+        swipe.Close(false);
+
+        Assert.True(closeRequestedFired);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void Programmatic_Close_Method_Can_Be_Cancelled()
+    {
+        var swipe = new Swipe
+        {
+            SwipeState = SwipeState.LeftVisible
+        };
+
+        swipe.CloseRequested += (_, e) => e.Cancel = true;
+
+        swipe.Close(false);
+
+        Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
+    }
+
+    [Fact]
+    public void Programmatic_SwipeState_Direct_Assignment_Raises_OpenRequested_And_CloseRequested()
+    {
+        var swipe = new Swipe();
+        var openedItems = new List<OpenSwipeItem>();
+        var closeCount = 0;
+
+        swipe.OpenRequested += (_, e) => openedItems.Add(e.OpenSwipeItem);
+        swipe.CloseRequested += (_, _) => closeCount++;
+
+        swipe.SwipeState = SwipeState.LeftVisible;
+        Assert.Equal(new[] { OpenSwipeItem.LeftItems }, openedItems);
+
+        swipe.SwipeState = SwipeState.Hidden;
+        Assert.Equal(1, closeCount);
+    }
+
+    [Fact]
+    public void Programmatic_SwipeState_Direct_Assignment_Cancel_Reverts_State()
+    {
+        var swipe = new Swipe();
+        swipe.OpenRequested += (_, e) => e.Cancel = true;
+
+        swipe.SwipeState = SwipeState.LeftVisible;
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
     private class TestCommand : ICommand
     {
         private readonly Action<object?>? _execute;
