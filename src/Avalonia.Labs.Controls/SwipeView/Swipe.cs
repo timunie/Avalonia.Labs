@@ -1,4 +1,5 @@
 using System;
+using System.Windows.Input;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
@@ -226,6 +227,126 @@ public class Swipe : Grid
     {
         get => GetValue(BottomModeProperty);
         set => SetValue(BottomModeProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="LeftCommand"/> property.
+    /// </summary>
+    public static readonly StyledProperty<ICommand?> LeftCommandProperty =
+        AvaloniaProperty.Register<Swipe, ICommand?>(nameof(LeftCommand));
+
+    /// <summary>
+    /// Gets or sets an <see cref="ICommand"/> to be invoked on left swipe gesture when <see cref="LeftMode"/> is <see cref="SwipeMode.Execute"/> and <see cref="Left" /> is set.
+    /// </summary>
+    public ICommand? LeftCommand
+    {
+        get => GetValue(LeftCommandProperty);
+        set => SetValue(LeftCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="LeftCommandParameter"/> property.
+    /// </summary>
+    public static readonly StyledProperty<object?> LeftCommandParameterProperty =
+        AvaloniaProperty.Register<Swipe, object?>(nameof(LeftCommandParameter));
+
+    /// <summary>
+    /// Gets or sets the parameter to pass to <see cref="LeftCommand"/> when it is invoked.
+    /// </summary>
+    public object? LeftCommandParameter
+    {
+        get => GetValue(LeftCommandParameterProperty);
+        set => SetValue(LeftCommandParameterProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="RightCommand"/> property.
+    /// </summary>
+    public static readonly StyledProperty<ICommand?> RightCommandProperty =
+        AvaloniaProperty.Register<Swipe, ICommand?>(nameof(RightCommand));
+
+    /// <summary>
+    /// Gets or sets an <see cref="ICommand"/> to be invoked on right swipe gesture when <see cref="RightMode"/> is <see cref="SwipeMode.Execute"/> and <see cref="Right" /> is set.
+    /// </summary>
+    public ICommand? RightCommand
+    {
+        get => GetValue(RightCommandProperty);
+        set => SetValue(RightCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="RightCommandParameter"/> property.
+    /// </summary>
+    public static readonly StyledProperty<object?> RightCommandParameterProperty =
+        AvaloniaProperty.Register<Swipe, object?>(nameof(RightCommandParameter));
+
+    /// <summary>
+    /// Gets or sets the parameter to pass to <see cref="RightCommand"/> when it is invoked.
+    /// </summary>
+    public object? RightCommandParameter
+    {
+        get => GetValue(RightCommandParameterProperty);
+        set => SetValue(RightCommandParameterProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="TopCommand"/> property.
+    /// </summary>
+    public static readonly StyledProperty<ICommand?> TopCommandProperty =
+        AvaloniaProperty.Register<Swipe, ICommand?>(nameof(TopCommand));
+
+    /// <summary>
+    /// Gets or sets an <see cref="ICommand"/> to be invoked on top swipe gesture when <see cref="TopMode"/> is <see cref="SwipeMode.Execute"/> and <see cref="Top" /> is set.
+    /// </summary>
+    public ICommand? TopCommand
+    {
+        get => GetValue(TopCommandProperty);
+        set => SetValue(TopCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="TopCommandParameter"/> property.
+    /// </summary>
+    public static readonly StyledProperty<object?> TopCommandParameterProperty =
+        AvaloniaProperty.Register<Swipe, object?>(nameof(TopCommandParameter));
+
+    /// <summary>
+    /// Gets or sets the parameter to pass to <see cref="TopCommand"/> when it is invoked.
+    /// </summary>
+    public object? TopCommandParameter
+    {
+        get => GetValue(TopCommandParameterProperty);
+        set => SetValue(TopCommandParameterProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="BottomCommand"/> property.
+    /// </summary>
+    public static readonly StyledProperty<ICommand?> BottomCommandProperty =
+        AvaloniaProperty.Register<Swipe, ICommand?>(nameof(BottomCommand));
+
+    /// <summary>
+    /// Gets or sets an <see cref="ICommand"/> to be invoked on bottom swipe gesture when <see cref="BottomMode"/> is <see cref="SwipeMode.Execute"/> and <see cref="Bottom" /> is set.
+    /// </summary>
+    public ICommand? BottomCommand
+    {
+        get => GetValue(BottomCommandProperty);
+        set => SetValue(BottomCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Defines the <see cref="BottomCommandParameter"/> property.
+    /// </summary>
+    public static readonly StyledProperty<object?> BottomCommandParameterProperty =
+        AvaloniaProperty.Register<Swipe, object?>(nameof(BottomCommandParameter));
+
+    /// <summary>
+    /// Gets or sets the parameter to pass to <see cref="BottomCommand"/> when it is invoked.
+    /// </summary>
+    public object? BottomCommandParameter
+    {
+        get => GetValue(BottomCommandParameterProperty);
+        set => SetValue(BottomCommandParameterProperty, value);
     }
 
     /// <summary>
@@ -773,30 +894,46 @@ public class Swipe : Grid
         {
             SwipeMode activeMode = SwipeMode.Reveal;
             SwipeDirection activeDirection = SwipeDirection.Right;
-
+            ICommand? command = default;
+            object? parameter = default;
             switch (newState)
             {
                 case SwipeState.LeftVisible:
                     activeMode = LeftMode;
                     activeDirection = SwipeDirection.Right;
+                    (command, parameter) = (LeftCommand, LeftCommandParameter);
                     break;
                 case SwipeState.RightVisible:
                     activeMode = RightMode;
                     activeDirection = SwipeDirection.Left;
+                    (command, parameter) = (RightCommand, RightCommandParameter);
                     break;
                 case SwipeState.TopVisible:
                     activeMode = TopMode;
                     activeDirection = SwipeDirection.Down;
+                    (command, parameter) = (TopCommand, TopCommandParameter);
                     break;
                 case SwipeState.BottomVisible:
                     activeMode = BottomMode;
                     activeDirection = SwipeDirection.Up;
+                    (command, parameter) = (BottomCommand, BottomCommandParameter);
                     break;
             }
 
             if (activeMode == SwipeMode.Execute)
             {
-                ExecuteRequested?.Invoke(this, activeDirection);
+                var canInvoke = true;
+                if (command is not null)
+                {
+                    canInvoke = command.CanExecute(parameter);
+                }
+                
+                if (canInvoke)
+                {
+                    command?.Execute(parameter);
+                    ExecuteRequested?.Invoke(this, activeDirection);
+                }
+                    
                 newState = SwipeState.Hidden;
             }
         }
