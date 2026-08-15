@@ -1,5 +1,9 @@
 using System.Reflection;
+using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Labs.Controls.Base.Pan;
@@ -1120,4 +1124,295 @@ public class SwipeTests
         Assert.True(swipeChanging);
         Assert.True(swipeEnded);
     }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureData))]
+    public void Command_Is_Invoked_On_Swipe_Gesture_When_Mode_Is_Execute_And_Template_Is_Set(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY,
+        SwipeDirection expectedDirection,
+        object expectedParam)
+    {
+        object? receivedParam = null;
+        var executed = false;
+        var command = new TestCommand(param =>
+        {
+            executed = true;
+            receivedParam = param;
+        });
+
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        configure(swipe, template, SwipeMode.Execute, command, expectedParam);
+
+        var swipeEndedCalled = false;
+        SwipeEndedEventArgs? endedArgs = null;
+        swipe.SwipeEnded += (_, e) =>
+        {
+            swipeEndedCalled = true;
+            endedArgs = e;
+        };
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.True(executed);
+        Assert.Equal(expectedParam, receivedParam);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.True(swipeEndedCalled);
+        Assert.NotNull(endedArgs);
+        Assert.False(endedArgs.IsOpen);
+        Assert.Equal(expectedDirection, endedArgs.SwipeDirection);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureSimpleData))]
+    public void Command_Is_Not_Invoked_When_CanExecute_Returns_False(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY)
+    {
+        var executed = false;
+        var command = new TestCommand(
+            execute: _ => executed = true,
+            canExecute: _ => false);
+
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        configure(swipe, template, SwipeMode.Execute, command, "arg");
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.False(executed);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureSimpleData))]
+    public void Command_Is_Not_Invoked_When_Mode_Is_Reveal(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY)
+    {
+        var executed = false;
+        var command = new TestCommand(execute: _ => executed = true);
+
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        configure(swipe, template, SwipeMode.Reveal, command, null);
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.False(executed);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureSimpleData))]
+    public void Command_Is_Not_Invoked_When_Template_Is_Not_Set(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY)
+    {
+        var executed = false;
+        var command = new TestCommand(execute: _ => executed = true);
+
+        var swipe = new Swipe();
+        configure(swipe, null, SwipeMode.Execute, command, null);
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.False(executed);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureSimpleData))]
+    public void When_Command_Is_Null_And_Mode_Is_Execute_SwipeState_Returns_To_Hidden(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY)
+    {
+        var swipe = new Swipe();
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        configure(swipe, template, SwipeMode.Execute, null, null);
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectionGestureSimpleData))]
+    public void Commands_Are_Not_Invoked_When_IsSwipeEnabled_Is_False(
+        Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
+        double deltaX,
+        double deltaY)
+    {
+        var executed = false;
+        var swipe = new Swipe
+        {
+            IsSwipeEnabled = false
+        };
+        var template = new FuncDataTemplate<object?>((_, _) => new Border { Width = 100, Height = 100 });
+        configure(swipe, template, SwipeMode.Execute, new TestCommand(_ => executed = true), "test_arg");
+
+        SimulatePanGesture(swipe, deltaX, deltaY);
+
+        Assert.False(executed);
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+    }
+
+    public static IEnumerable<object[]> DirectionGestureData()
+    {
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Left = t;
+                s.LeftMode = m;
+                s.LeftCommand = c;
+                s.LeftCommandParameter = p;
+            }),
+            150.0, 0.0,
+            SwipeDirection.Right,
+            "custom_left_arg"
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Right = t;
+                s.RightMode = m;
+                s.RightCommand = c;
+                s.RightCommandParameter = p;
+            }),
+            -150.0, 0.0,
+            SwipeDirection.Left,
+            42
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Top = t;
+                s.TopMode = m;
+                s.TopCommand = c;
+                s.TopCommandParameter = p;
+            }),
+            0.0, 150.0,
+            SwipeDirection.Down,
+            "top_value"
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Bottom = t;
+                s.BottomMode = m;
+                s.BottomCommand = c;
+                s.BottomCommandParameter = p;
+            }),
+            0.0, -150.0,
+            SwipeDirection.Up,
+            "bottom_value"
+        };
+    }
+
+    public static IEnumerable<object[]> DirectionGestureSimpleData()
+    {
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Left = t;
+                s.LeftMode = m;
+                s.LeftCommand = c;
+                s.LeftCommandParameter = p;
+            }),
+            150.0, 0.0
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Right = t;
+                s.RightMode = m;
+                s.RightCommand = c;
+                s.RightCommandParameter = p;
+            }),
+            -150.0, 0.0
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Top = t;
+                s.TopMode = m;
+                s.TopCommand = c;
+                s.TopCommandParameter = p;
+            }),
+            0.0, 150.0
+        };
+        yield return new object[]
+        {
+            new Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?>((s, t, m, c, p) =>
+            {
+                s.Bottom = t;
+                s.BottomMode = m;
+                s.BottomCommand = c;
+                s.BottomCommandParameter = p;
+            }),
+            0.0, -150.0
+        };
+    }
+
+    private static void SimulatePanGesture(Swipe swipe, double deltaX, double deltaY)
+    {
+        swipe.DataContext ??= new object();
+
+        var panUpdatedMethod = typeof(Swipe).GetMethod("PanUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(panUpdatedMethod);
+
+        // 1. Started
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Started, 0, 0)]);
+
+        // 2. Running (pass initial lock threshold to make active side container visible)
+        var runningX = deltaX != 0 ? (deltaX > 0 ? 50 : -50) : 0;
+        var runningY = deltaY != 0 ? (deltaY > 0 ? 50 : -50) : 0;
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Running, runningX, runningY)]);
+
+        // Set dimensions on visible side containers for unit testing
+        foreach (var child in swipe.Children)
+        {
+            if (child is ContentPresenter cp && cp.IsVisible)
+            {
+                cp.Width = 100;
+                cp.Height = 100;
+                cp.Measure(new Size(500, 500));
+            }
+        }
+
+        // 3. Completed
+        panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Completed, deltaX, deltaY)]);
+    }
+
+    private class TestCommand : ICommand
+    {
+        private readonly Action<object?>? _execute;
+        private readonly Func<object?, bool>? _canExecute;
+
+        public TestCommand(Action<object?>? execute = null, Func<object?, bool>? canExecute = null)
+        {
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
+
+        public void Execute(object? parameter) => _execute?.Invoke(parameter);
+
+        public event EventHandler? CanExecuteChanged;
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
 }
+
+
