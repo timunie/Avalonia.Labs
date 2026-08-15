@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AvaloniaVersion>12.0.1</AvaloniaVersion>
     <AvaloniaSampleVersion>12.0.1</AvaloniaSampleVersion>
-    <SkiaSharpVersion>3.119.3-preview.1.1</SkiaSharpVersion>
+    <SkiaSharpVersion>3.119.4</SkiaSharpVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
@@ -14,7 +14,7 @@
     <PackageVersion Include="Avalonia.iOS" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.0-beta3" />
+    <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageVersion Include="coverlet.collector" Version="3.1.2" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
