@@ -14,7 +14,7 @@
               <Button Command="{Binding SendPredefinedActionsNotification}" HorizontalAlignment="Stretch">Send Notification With Predefined Actions</Button>
               <Button Command="{Binding SendCustomActionsNotification}"
                       HorizontalAlignment="Stretch">Send Notification With Custom Actions</Button>
-              <TextBox Watermark="Custom Action Caption" Text="{Binding CustomCaption}"/>
+              <TextBox PlaceholderText="Custom Action Caption" Text="{Binding CustomCaption}"/>
               <Button Command="{Binding SendReplyActionNotification}"
                       HorizontalAlignment="Stretch">Send Notification with Reply Action</Button>
               <Label Content="{Binding Response}"/>
