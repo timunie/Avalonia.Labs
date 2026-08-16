@@ -1,11 +1,15 @@
 using System.Reflection;
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Labs.Controls.Automation.Peers;
 using Avalonia.Labs.Controls.Base.Pan;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Templates;
@@ -877,7 +881,7 @@ public class SwipeTests
         Assert.Equal("Direct Child Content", tb.Text);
     }
 
- 
+
     [Fact]
     public void When_IsSwipeEnabled_Is_False_Programmatic_Swiping_Continues_To_Work()
     {
@@ -1061,7 +1065,7 @@ public class SwipeTests
         Assert.Equal(0, openRequestedCount);
     }
 
-  
+
     [Fact]
     public void When_IsSwipeEnabled_Is_False_Pan_Gestures_Are_Disabled()
     {
@@ -1589,6 +1593,98 @@ public class SwipeTests
 
         public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    [Fact]
+    public void Swipe_Creates_SwipeAutomationPeer()
+    {
+        var swipe = new Swipe();
+        var peer = ControlAutomationPeer.CreatePeerForElement(swipe);
+
+        Assert.NotNull(peer);
+        Assert.IsType<SwipeAutomationPeer>(peer);
+    }
+
+    [Fact]
+    public void SwipeAutomationPeer_Properties_And_Provider_Work_Correctly()
+    {
+        var swipe = new Swipe();
+        var peer = new SwipeAutomationPeer(swipe);
+
+        Assert.Equal(swipe, peer.Owner);
+        Assert.Equal(AutomationControlType.Pane, peer.GetAutomationControlType());
+        Assert.Equal("Swipe", peer.GetClassName());
+        Assert.False(peer.CanSelectMultiple);
+        Assert.False(peer.IsSelectionRequired);
+        Assert.Empty(peer.GetSelection());
+    }
+
+    [Fact]
+    public void SwipeAutomationPeer_GetProvider_Returns_SelectionProvider()
+    {
+        var swipe = new Swipe();
+        var peer = new SwipeAutomationPeer(swipe);
+
+        var provider = peer.GetProvider<ISelectionProvider>();
+        Assert.NotNull(provider);
+        Assert.Same(peer, provider);
+    }
+
+    [Fact]
+    public void SwipeAutomationPeer_Selection_Works_Correctly()
+    {
+        var swipe = new Swipe
+        {
+            Left = new DataTemplate(),
+            Right = new DataTemplate()
+        };
+        var peer = new SwipeAutomationPeer(swipe);
+
+        Assert.False(peer.CanSelectMultiple);
+        Assert.False(peer.IsSelectionRequired);
+        Assert.Empty(peer.GetSelection());
+
+        // Select Left
+        swipe.Open(OpenSwipeItem.LeftItems);
+        var selection = peer.GetSelection();
+        Assert.Single(selection);
+        var itemPeer = Assert.IsType<SwipeItemAutomationPeer>(selection[0]);
+        Assert.Equal(OpenSwipeItem.LeftItems, itemPeer.SwipeItem);
+        Assert.True(itemPeer.IsSelected);
+        Assert.Same(peer, itemPeer.SelectionContainer);
+
+        // Deselect via RemoveFromSelection
+        itemPeer.RemoveFromSelection();
+        Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
+        Assert.Empty(peer.GetSelection());
+
+        // Select via ItemPeer.Select()
+        var rightItemPeer = peer.GetOrCreateItemPeer(OpenSwipeItem.RightItems);
+        rightItemPeer.Select();
+        Assert.Equal(SwipeState.RightVisible, swipe.SwipeState);
+        Assert.True(rightItemPeer.IsSelected);
+        Assert.Single(peer.GetSelection());
+    }
+
+    [Fact]
+    public void SwipeAutomationPeer_GetChildren_Includes_Configured_Items()
+    {
+        var swipe = new Swipe
+        {
+            Left = new DataTemplate(),
+            Top = new DataTemplate(),
+            Right = new DataTemplate(),
+            Bottom = new DataTemplate()
+        };
+        var peer = new SwipeAutomationPeer(swipe);
+
+        var children = peer.GetChildren();
+        Assert.True(children.Count >= 4);
+        Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.LeftItems });
+        Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.TopItems });
+        Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.RightItems });
+        Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.BottomItems });
+    }
 }
+
 
 

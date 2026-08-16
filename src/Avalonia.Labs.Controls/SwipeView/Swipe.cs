@@ -2,11 +2,13 @@ using System;
 using System.Windows.Input;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Labs.Controls.Automation.Peers;
 using Avalonia.Labs.Controls.Base.Pan;
 using Avalonia.Layout;
 using Avalonia.Media.Transformation;
@@ -1162,6 +1164,12 @@ public class Swipe : Grid
                 _transition.Duration = originalDuration;
             }, DispatcherPriority.Render);
         }
+    }
+
+    /// <inheritdoc />
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new SwipeAutomationPeer(this);
     }
 
     /// <inheritdoc />
