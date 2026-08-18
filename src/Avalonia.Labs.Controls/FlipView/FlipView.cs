@@ -32,7 +32,8 @@ namespace Avalonia.Labs.Controls
         /// <summary>
         /// Defines the <see cref="IsButtonsVisible"/> property.
         /// </summary>
-        public static StyledProperty<bool> IsButtonsVisibleProperty = AvaloniaProperty.Register<FlipView, bool>(nameof(IsButtonsVisible), defaultValue: true);
+        public static readonly StyledProperty<bool> IsButtonsVisibleProperty = 
+            AvaloniaProperty.Register<FlipView, bool>(nameof(IsButtonsVisible), defaultValue: true);
 
         /// <summary>
         /// Defines the <see cref="TransitionDuration"/> property.
