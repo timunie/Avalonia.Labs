@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Labs.Controls;
 using Avalonia.Labs.Controls.Base;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Labs.Catalog.Views
 {
@@ -24,7 +25,8 @@ namespace Avalonia.Labs.Catalog.Views
 
         private void CloseSwipe(object? sender, RoutedEventArgs e)
         {
-            var demoSwipe = this.FindControl<Swipe>("DemoSwipe");
+            var demoSwipe = (sender as Visual).FindAncestorOfType<Swipe>() ??
+                this.FindControl<Swipe>("DemoSwipe");
             if (demoSwipe != null)
             {
                 demoSwipe.SwipeState = SwipeState.Hidden;
