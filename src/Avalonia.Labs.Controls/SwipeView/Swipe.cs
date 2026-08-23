@@ -468,13 +468,15 @@ public class Swipe : Grid
 
         _panGestureRecognizer = new PanGestureRecognizer
         {
-            Direction = PanDirection.Left | PanDirection.Right | PanDirection.Up | PanDirection.Down,
+            Direction = PanDirection.None,
             Threshold = GestureThreshold,
         };
 
         _panGestureRecognizer.OnPan += PanUpdated;
         _bodyContainer.GestureRecognizers.Add(_panGestureRecognizer);
         
+        UpdatePanDirections();
+
         _cachedSwipeChangingArgs = new SwipeChangingEventArgs(SwipeDirection.Left, 0);
 
         Children.Add(_rightContainer);
@@ -613,10 +615,75 @@ public class Swipe : Grid
             }
 
             ProcessSwipe(SwipeState);
+            UpdatePanDirections();
         }
         else if (e.Property == AnimationDurationProperty)
         {
             _transition.Duration = e.GetNewValue<TimeSpan>();
+        }
+        else if (e.Property == RightTemplateProperty ||
+                 e.Property == LeftTemplateProperty ||
+                 e.Property == TopTemplateProperty ||
+                 e.Property == BottomTemplateProperty ||
+                 e.Property == IsSwipeEnabledProperty)
+        {
+            UpdatePanDirections();
+        }
+    }
+
+    private void UpdatePanDirections()
+    {
+        if (_panGestureRecognizer is null)
+            return;
+
+        if (!IsSwipeEnabled)
+        {
+            _panGestureRecognizer.Direction = PanDirection.None;
+            return;
+        }
+
+        switch (SwipeState)
+        {
+            case SwipeState.Hidden:
+                var directions = PanDirection.None;
+                if (Left != null)
+                {
+                    directions |= PanDirection.Right;
+                }
+                if (Right != null)
+                {
+                    directions |= PanDirection.Left;
+                }
+                if (Top != null)
+                {
+                    directions |= PanDirection.Down;
+                }
+                if (Bottom != null)
+                {
+                    directions |= PanDirection.Up;
+                }
+                _panGestureRecognizer.Direction = directions;
+                break;
+
+            case SwipeState.LeftVisible:
+                _panGestureRecognizer.Direction = PanDirection.Left;
+                break;
+
+            case SwipeState.RightVisible:
+                _panGestureRecognizer.Direction = PanDirection.Right;
+                break;
+
+            case SwipeState.TopVisible:
+                _panGestureRecognizer.Direction = PanDirection.Up;
+                break;
+
+            case SwipeState.BottomVisible:
+                _panGestureRecognizer.Direction = PanDirection.Down;
+                break;
+
+            default:
+                _panGestureRecognizer.Direction = PanDirection.None;
+                break;
         }
     }
 
@@ -1059,6 +1126,8 @@ public class Swipe : Grid
                 _isInternalStateChange = false;
             }
         }
+
+        UpdatePanDirections();
 
         bool isOpen = newState != SwipeState.Hidden;
         RaiseEvent(new SwipeEndedEventArgs(SwipeEndedEvent, _swipeDirection, isOpen));

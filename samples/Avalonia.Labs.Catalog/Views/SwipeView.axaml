@@ -115,63 +115,41 @@
         <TextBlock Text="Swipe List" FontSize="16" FontWeight="Bold"/>
 
         <ItemsControl ItemsSource="{Binding Items}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <labs:Swipe Margin="5">
-            <StackPanel Orientation="Horizontal" Spacing="5" Background="Transparent">
-              <StackPanel.GestureRecognizers>
-                <base:TapGestureRecognizer OnTap="TapGestureRecognizer_OnOnTap" />
-              </StackPanel.GestureRecognizers>
-              <Border Background="Red" Width="64" Height="64" />
-              <Border Background="Red" Width="64" Height="64" />
-              <Border Background="Red" Width="64" Height="64" />
-              <Label Content="You can swipe or click on the item"/>
-            </StackPanel>
-            <labs:Swipe.Right>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="5">
-                  <Border Background="Blue" Width="64" Height="64" />
-                  <Border Background="Blue" Width="64" Height="64" />
-                  <Button Classes="accent" Width="64" Height="64" Click="CloseSwipe" Content="Close" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <labs:Swipe Margin="5">
+                <StackPanel Orientation="Horizontal" Spacing="5" Background="Transparent">
+                  <StackPanel.GestureRecognizers>
+                    <base:TapGestureRecognizer OnTap="TapGestureRecognizer_OnOnTap" />
+                  </StackPanel.GestureRecognizers>
+                  <Border Background="Red" Width="64" Height="64" />
+                  <Border Background="Red" Width="64" Height="64" />
+                  <Border Background="Red" Width="64" Height="64" />
+                  <Label Content="You can swipe or click on the item"/>
                 </StackPanel>
-              </DataTemplate>
-            </labs:Swipe.Right>
-            <labs:Swipe.Left>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="5">
-                  <Button Classes="accent" Width="64" Height="64" Click="CloseSwipe" Content="Close" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                  <Border Background="Green" Width="64" Height="64" />
-                  <Border Background="Green" Width="64" Height="64" />
-                </StackPanel>
-              </DataTemplate>
-            </labs:Swipe.Left>
-            <labs:Swipe.Top>
-              <DataTemplate>
-                <Border Background="Orange" Padding="10">
-                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Top Items" VerticalAlignment="Center" Margin="5"/>
-                    <Button Classes="accent" Click="CloseSwipe" Content="Close" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </labs:Swipe.Top>
-            <labs:Swipe.Bottom>
-              <DataTemplate>
-                <Border Background="Purple" Padding="10">
-                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Bottom Items" VerticalAlignment="Center" Margin="5" Foreground="White"/>
-                    <Button Classes="accent" Click="CloseSwipe" Content="Close" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </labs:Swipe.Bottom>
-          </labs:Swipe>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
+                <labs:Swipe.Right>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Border Background="Blue" Width="64" Height="64" />
+                      <Border Background="Blue" Width="64" Height="64" />
+                      <Button Classes="accent" Width="64" Height="64" Click="CloseSwipe" Content="Close" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                    </StackPanel>
+                  </DataTemplate>
+                </labs:Swipe.Right>
+                <labs:Swipe.Left>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Button Classes="accent" Width="64" Height="64" Click="CloseSwipe" Content="Close" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                      <Border Background="Green" Width="64" Height="64" />
+                      <Border Background="Green" Width="64" Height="64" />
+                    </StackPanel>
+                  </DataTemplate>
+                </labs:Swipe.Left>
+              </labs:Swipe>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </StackPanel>
-
     </StackPanel>
   </ScrollViewer>
-
 </UserControl>

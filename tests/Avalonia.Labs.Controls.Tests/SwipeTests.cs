@@ -1684,6 +1684,116 @@ public class SwipeTests
         Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.RightItems });
         Assert.Contains(children, c => c is SwipeItemAutomationPeer { SwipeItem: OpenSwipeItem.BottomItems });
     }
+
+    private static PanDirection GetPanDirection(Swipe swipe)
+    {
+        var field = typeof(Swipe).GetField("_panGestureRecognizer", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(field);
+        var recognizer = (PanGestureRecognizer)field.GetValue(swipe)!;
+        Assert.NotNull(recognizer);
+        return recognizer.Direction;
+    }
+
+    [Fact]
+    public void PanGestureRecognizer_Defaults_To_All_Directions()
+    {
+        var recognizer = new PanGestureRecognizer();
+
+        Assert.Equal(
+            PanDirection.Left | PanDirection.Right | PanDirection.Up | PanDirection.Down,
+            recognizer.Direction);
+        Assert.Equal(5, recognizer.Threshold);
+    }
+
+    [Fact]
+    public void Swipe_PanGestureRecognizer_Directions_Are_Dynamic_Based_On_Configured_Templates()
+    {
+        var swipe = new Swipe();
+
+        // Initially no templates are configured -> PanDirection.None (does not intercept any gestures)
+        Assert.Equal(PanDirection.None, GetPanDirection(swipe));
+
+        // Configure Left template -> can swipe Right to reveal Left items
+        swipe.Left = new DataTemplate();
+        Assert.Equal(PanDirection.Right, GetPanDirection(swipe));
+
+        // Configure Right template -> can swipe Right or Left
+        swipe.Right = new DataTemplate();
+        Assert.Equal(PanDirection.Right | PanDirection.Left, GetPanDirection(swipe));
+
+        // Configure Top template -> can swipe Down to reveal Top items
+        swipe.Top = new DataTemplate();
+        Assert.Equal(PanDirection.Right | PanDirection.Left | PanDirection.Down, GetPanDirection(swipe));
+
+        // Configure Bottom template -> can swipe Up to reveal Bottom items
+        swipe.Bottom = new DataTemplate();
+        Assert.Equal(
+            PanDirection.Right | PanDirection.Left | PanDirection.Down | PanDirection.Up,
+            GetPanDirection(swipe));
+
+        // Remove Left template -> Right, Down, Up
+        swipe.Left = null;
+        Assert.Equal(
+            PanDirection.Left | PanDirection.Down | PanDirection.Up,
+            GetPanDirection(swipe));
+    }
+
+    [Fact]
+    public void Swipe_PanGestureRecognizer_Directions_Are_Dynamic_Based_On_SwipeState()
+    {
+        var swipe = new Swipe
+        {
+            Left = new DataTemplate(),
+            Right = new DataTemplate(),
+            Top = new DataTemplate(),
+            Bottom = new DataTemplate()
+        };
+
+        // When Hidden -> all 4 open directions
+        Assert.Equal(
+            PanDirection.Right | PanDirection.Left | PanDirection.Down | PanDirection.Up,
+            GetPanDirection(swipe));
+
+        // When LeftVisible -> can only swipe Left (to close)
+        swipe.SwipeState = SwipeState.LeftVisible;
+        Assert.Equal(PanDirection.Left, GetPanDirection(swipe));
+
+        // When RightVisible -> can only swipe Right (to close)
+        swipe.SwipeState = SwipeState.RightVisible;
+        Assert.Equal(PanDirection.Right, GetPanDirection(swipe));
+
+        // When TopVisible -> can only swipe Up (to close)
+        swipe.SwipeState = SwipeState.TopVisible;
+        Assert.Equal(PanDirection.Up, GetPanDirection(swipe));
+
+        // When BottomVisible -> can only swipe Down (to close)
+        swipe.SwipeState = SwipeState.BottomVisible;
+        Assert.Equal(PanDirection.Down, GetPanDirection(swipe));
+
+        // Back to Hidden -> all 4 open directions restored
+        swipe.SwipeState = SwipeState.Hidden;
+        Assert.Equal(
+            PanDirection.Right | PanDirection.Left | PanDirection.Down | PanDirection.Up,
+            GetPanDirection(swipe));
+    }
+
+    [Fact]
+    public void Swipe_PanGestureRecognizer_Disabled_When_IsSwipeEnabled_Is_False()
+    {
+        var swipe = new Swipe
+        {
+            Left = new DataTemplate(),
+            Right = new DataTemplate()
+        };
+
+        Assert.Equal(PanDirection.Right | PanDirection.Left, GetPanDirection(swipe));
+
+        swipe.IsSwipeEnabled = false;
+        Assert.Equal(PanDirection.None, GetPanDirection(swipe));
+
+        swipe.IsSwipeEnabled = true;
+        Assert.Equal(PanDirection.Right | PanDirection.Left, GetPanDirection(swipe));
+    }
 }
 
 
