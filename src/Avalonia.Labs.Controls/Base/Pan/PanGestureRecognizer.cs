@@ -17,6 +17,7 @@ public class PanGestureRecognizer : GestureRecognizer
     private PanGestureStatus _state;
     private Visual? _visual;
     private Visual? _parent;
+    private bool _isIgnored;
 
     public event EventHandler<PanUpdatedEventArgs>? OnPan;
 
@@ -32,61 +33,71 @@ public class PanGestureRecognizer : GestureRecognizer
         _tracking = e.Pointer;
         _visual = Target as Visual;
         _parent = _visual?.Parent as Visual;
-        _startPosition = e.GetPosition(_parent);
+        var container = _parent ?? _visual;
+        _startPosition = e.GetPosition(container);
+        _delta = default;
         _state = PanGestureStatus.Started;
+        _isIgnored = false;
     }
 
     /// <inheritdoc />
     protected override void PointerMoved(PointerEventArgs e)
     {
-        if (e.Pointer != _tracking)
+        if (e.Pointer != _tracking || _isIgnored)
         {
             return;
         }
 
-        var currentPosition = e.GetPosition(_parent);
+        if (Direction == PanDirection.None)
+        {
+            return;
+        }
+
+        var container = _parent ?? _visual;
+        var currentPosition = e.GetPosition(container);
         _delta = currentPosition - _startPosition;
 
-        var currentDirection = PanDirection.None;
-        if (_delta.X < -Threshold)
-        {
-            currentDirection |= PanDirection.Left;
-        }
-        else if (_delta.X > Threshold)
-        {
-            currentDirection |= PanDirection.Right;
-        }
+        var absX = Math.Abs(_delta.X);
+        var absY = Math.Abs(_delta.Y);
 
-        if (_delta.Y < -Threshold)
+        if (_state != PanGestureStatus.Running)
         {
-            currentDirection |= PanDirection.Up;
-        }
-        else if (_delta.Y > Threshold)
-        {
-            currentDirection |= PanDirection.Down;
-        }
+            if (absX < Threshold && absY < Threshold)
+            {
+                return;
+            }
 
-        if ((currentDirection & Direction) == 0)
-        {
-            return;
-        }
+            var dominantDirection = PanDirection.None;
+            if (absX >= absY)
+            {
+                dominantDirection = _delta.X < 0 ? PanDirection.Left : PanDirection.Right;
+            }
+            else
+            {
+                dominantDirection = _delta.Y < 0 ? PanDirection.Up : PanDirection.Down;
+            }
 
-        if (Math.Abs(_delta.X) < Threshold && Math.Abs(_delta.Y) < Threshold)
-        {
-            return;
-        }
+            if ((dominantDirection & Direction) == 0)
+            {
+                // The movement is in an orthogonal or disabled direction.
+                // Do not capture pointer, do not handle event, and do not prevent ancestor recognizers (e.g. ScrollViewer).
+                _isIgnored = true;
+                return;
+            }
 
-        if (_state == PanGestureStatus.Started)
-        {
-            OnPan?.Invoke(_inputElement, new PanUpdatedEventArgs(PanGestureStatus.Started, 0, 0));
-            e.Handled = true;
+            _state = PanGestureStatus.Running;
             Capture(e.Pointer);
-        }
+            e.PreventGestureRecognition();
+            e.Handled = true;
 
-        OnPan?.Invoke(_inputElement, new PanUpdatedEventArgs(PanGestureStatus.Running, _delta.X, _delta.Y));
-        _state = PanGestureStatus.Running;
-        e.Handled = true;
-        e.PreventGestureRecognition();
+            OnPan?.Invoke(_inputElement, new PanUpdatedEventArgs(PanGestureStatus.Started, 0, 0));
+            OnPan?.Invoke(_inputElement, new PanUpdatedEventArgs(PanGestureStatus.Running, _delta.X, _delta.Y));
+        }
+        else
+        {
+            OnPan?.Invoke(_inputElement, new PanUpdatedEventArgs(PanGestureStatus.Running, _delta.X, _delta.Y));
+            e.Handled = true;
+        }
     }
 
     /// <inheritdoc />
@@ -97,39 +108,47 @@ public class PanGestureRecognizer : GestureRecognizer
             return;
         }
 
-        _tracking = null;
-
-        if (_state != PanGestureStatus.Running)
-        {
-            return;
-        }
-
-        _state = PanGestureStatus.Completed;
-        var currentPosition = e.GetPosition(_parent);
+        var wasRunning = _state == PanGestureStatus.Running;
+        var container = _parent ?? _visual;
+        var currentPosition = e.GetPosition(container);
         var delta = currentPosition - _startPosition;
-        OnPan?.Invoke(_inputElement,
-            new PanUpdatedEventArgs(PanGestureStatus.Completed, delta.X, delta.Y));
 
-        e.Handled = true;
+        _tracking = null;
+        _isIgnored = false;
+        _state = PanGestureStatus.Completed;
+
+        if (wasRunning)
+        {
+            OnPan?.Invoke(_inputElement,
+                new PanUpdatedEventArgs(PanGestureStatus.Completed, delta.X, delta.Y));
+
+            e.Handled = true;
+        }
     }
 
     /// <inheritdoc />
     protected override void PointerCaptureLost(IPointer pointer)
     {
-        var delta = _delta;
-
-        _tracking = null;
-        _delta = default;
-
-        if (_state != PanGestureStatus.Running)
+        if (pointer != _tracking)
         {
             return;
         }
 
-        OnPan?.Invoke(_inputElement,
-            new PanUpdatedEventArgs(
-                PanGestureStatus.Completed,
-                delta.X,
-                delta.Y));
+        var delta = _delta;
+        var wasRunning = _state == PanGestureStatus.Running;
+
+        _tracking = null;
+        _isIgnored = false;
+        _delta = default;
+        _state = PanGestureStatus.Completed;
+
+        if (wasRunning)
+        {
+            OnPan?.Invoke(_inputElement,
+                new PanUpdatedEventArgs(
+                    PanGestureStatus.Completed,
+                    delta.X,
+                    delta.Y));
+        }
     }
 }
