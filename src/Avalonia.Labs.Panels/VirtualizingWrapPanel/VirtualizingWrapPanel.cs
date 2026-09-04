@@ -114,6 +114,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     private readonly Action<Control, int, int> _updateElementIndex;
     private int _scrollToIndex = -1;
     private Control? _scrollToElement;
+    private bool _pendingScrollIntoView;
     private bool _isInLayout;
     private bool _isWaitingForViewportUpdate;
     private RealizedWrapElements? _measureElements;
@@ -516,6 +517,12 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
                     new Rect(scrollToOffsetY, scrollToOffsetX, finalSize.Width,
                         _scrollToElement.DesiredSize.Height);
                 _scrollToElement.Arrange(rect);
+
+                if (_pendingScrollIntoView)
+                {
+                    _pendingScrollIntoView = false;
+                    _scrollToElement.BringIntoView();
+                }
             }
 
             return finalSize;
@@ -788,28 +795,20 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
         var wrappingWidth = GetWrappingWidth();
 
-        if (TopLevel.GetTopLevel(this) is not { } root)
-            return null;
-
         var element = GetRealizedElement(index);
 
         if (element is not null)
         {
-            var rect = GetExpectedItemRect(index, wrappingWidth);
-
-            if (!_viewport.Contains(rect))
-            {
-                _isWaitingForViewportUpdate = true;
-                InvalidateMeasure();
-                root.UpdateLayout();
-                _isWaitingForViewportUpdate = false;
-            }
-
             element.BringIntoView();
             return element;
         }
         else
         {
+            if (_scrollToElement is not null)
+            {
+                RecycleElement(_scrollToElement, _scrollToIndex);
+            }
+
             // Create and measure the element to be brought into view. Store it in a field so that
             // it can be re-used in the layout pass.
             var scrollToElement = GetOrCreateElement(items, index);
@@ -822,51 +821,9 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             // Store the element and index so that they can be used in the layout pass.
             _scrollToElement = scrollToElement;
             _scrollToIndex = index;
-
-            // If the item being brought into view was added since the last layout pass then
-            // our bounds won't be updated, so any containing scroll viewers will not have an
-            // updated extent. Do a layout pass to ensure that the containing scroll viewers
-            // will be able to scroll the new item into view.
-            if (!Bounds.Contains(rect) && !_viewport.Contains(rect))
-            {
-                _isWaitingForViewportUpdate = true;
-                root.UpdateLayout();
-                _isWaitingForViewportUpdate = false;
-            }
-
-            // Try to bring the item into view.
-            scrollToElement.BringIntoView();
-
-            // If the viewport does not contain the item to scroll to, set _isWaitingForViewportUpdate:
-            // this should cause the following chain of events:
-            // - Measure is first done with the old viewport (which will be a no-op, see MeasureOverride)
-            // - The viewport is then updated by the layout system which invalidates our measure
-            // - Measure is then done with the new viewport.
-            _isWaitingForViewportUpdate = !_viewport.Contains(rect);
-            root.UpdateLayout();
-
-            // If for some reason the layout system didn't give us a new viewport during the layout, we
-            // need to do another layout pass as the one that took place was a no-op.
-            if (_isWaitingForViewportUpdate)
-            {
-                _isWaitingForViewportUpdate = false;
-                InvalidateMeasure();
-                root.UpdateLayout();
-            }
-
-            // During the previous BringIntoView, the scroll width extent might have been out of date if
-            // elements have different widths. Because of that, the ScrollViewer might not scroll to the correct offset.
-            // After the previous BringIntoView, Y offset should be correct and an extra layout pass has been executed,
-            // hence the width extent should be correct now, and we can try to scroll again.
-            scrollToElement.BringIntoView();
-
-            if (_scrollToElement is not null)
-            {
-                RecycleElement(_scrollToElement, _scrollToIndex);
-            }
-
-            _scrollToElement = null;
-            _scrollToIndex = -1;
+            _pendingScrollIntoView = true;
+            _isWaitingForViewportUpdate = true;
+            InvalidateMeasure();
             return scrollToElement;
         }
     }
@@ -1463,6 +1420,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             {
                 _scrollToIndex = -1;
                 _scrollToElement = null;
+                _pendingScrollIntoView = false;
             }
 
             Size? upfrontKnownItemSize = GetUpfrontKnownItemSize(item);
