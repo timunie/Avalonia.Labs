@@ -121,7 +121,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     private RealizedWrapElements? _realizedElements;
     private IScrollAnchorProvider? _scrollAnchorProvider;
     private Rect _viewport;
-    private Dictionary<object, Stack<Control>>? _recyclePool;
+    private Dictionary<object, Queue<Control>>? _recyclePool;
     private Control? _focusedElement;
         
     /// <summary>
@@ -549,6 +549,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     {
         base.OnDetachedFromVisualTree(e);
         _scrollAnchorProvider = null;
+        ClearRecyclePool();
     }
 
     /// <inheritdoc />
@@ -591,7 +592,10 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
         base.OnItemsControlChanged(oldValue);
 
         if (oldValue is not null)
+        {
             oldValue.PropertyChanged -= OnItemsControlPropertyChanged;
+            ClearRecyclePool();
+        }
         if (ItemsControl is not null)
             ItemsControl.PropertyChanged += OnItemsControlPropertyChanged;
     }
@@ -2328,7 +2332,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
         if (_recyclePool?.TryGetValue(recycleKey, out var recyclePool) == true && recyclePool.Count > 0)
         {
-            var recycled = recyclePool.Pop();
+            var recycled = recyclePool.Dequeue();
             recycled.SetCurrentValue(Visual.IsVisibleProperty, true);
             generator.PrepareItemContainer(recycled, item, index);
             generator.ItemContainerPrepared(recycled, item, index);
@@ -2435,11 +2439,25 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             _recyclePool.Add(recycleKey, pool);
         }
 
-        pool.Push(element);
+        pool.Enqueue(element);
 
         // If the pool exceeds the cap, eject the oldest container from the visual tree.
         while (pool.Count > RecyclePoolMaxSize)
-            RemoveInternalChild(pool.Pop());
+            RemoveInternalChild(pool.Dequeue());
+    }
+
+    private void ClearRecyclePool()
+    {
+        if (_recyclePool is null)
+            return;
+
+        foreach (var pool in _recyclePool.Values)
+        {
+            while (pool.Count > 0)
+                RemoveInternalChild(pool.Dequeue());
+        }
+
+        _recyclePool = null;
     }
 
     /// <summary>
