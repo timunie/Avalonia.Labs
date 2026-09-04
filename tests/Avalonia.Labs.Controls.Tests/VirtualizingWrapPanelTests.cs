@@ -69,6 +69,57 @@ public class VirtualizingWrapPanelTests
     }
 
     [AvaloniaFact]
+    public void Null_Items_Use_The_Configured_ItemSize()
+    {
+        var target = new TestVirtualizingWrapPanel
+        {
+            ItemSize = new Size(50, 50)
+        };
+
+        var itemsControl = new ItemsControl
+        {
+            Width = 100,
+            Height = 100,
+            ItemsPanel = new FuncTemplate<Panel?>(() => target),
+            ItemsSource = new object?[] { null, null, null }
+        };
+
+        var window = new Window { Content = itemsControl };
+        window.Show();
+        window.UpdateLayout();
+
+        Assert.Equal(new Size(100, 100), target.DesiredSize);
+    }
+
+    [AvaloniaFact]
+    public void Regular_SnapPoints_Use_The_Requested_Orientation()
+    {
+        var target = new TestVirtualizingWrapPanel
+        {
+            ItemSize = new Size(40, 20),
+            AreHorizontalSnapPointsRegular = true,
+            AreVerticalSnapPointsRegular = true
+        };
+
+        var itemsControl = new ItemsControl
+        {
+            Width = 100,
+            Height = 100,
+            ItemsPanel = new FuncTemplate<Panel?>(() => target),
+            ItemsSource = new[] { "item" }
+        };
+
+        var window = new Window { Content = itemsControl };
+        window.Show();
+        window.UpdateLayout();
+
+        var snapPoint = target.GetRegularSnapPoints(Orientation.Vertical, SnapPointsAlignment.Near, out var offset);
+
+        Assert.Equal(20, snapPoint);
+        Assert.Equal(0, offset);
+    }
+
+    [AvaloniaFact]
     public void ScrollIntoView_Works()
     {
         var target = new TestVirtualizingWrapPanel

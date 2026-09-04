@@ -1599,14 +1599,14 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     /// <returns>the size of the item or null if not known</returns>
     private Size? GetUpfrontKnownItemSize(object? item)
     {
-        if (item is null)
-        {
-            return null;
-        }
-
         if (!ItemSize.NearlyEquals(_EmptySize))
         {
             return ItemSize;
+        }
+
+        if (item is null)
+        {
+            return null;
         }
 
         if (!AllowDifferentSizedItems && _sizeOfFirstItem != null)
@@ -1630,8 +1630,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     /// <returns>the assumed size of the item</returns>
     private Size GetAssumedItemSize(int index, object? item)
     {
-        if (item is null) return _EmptySize;
-
         if (GetUpfrontKnownItemSize(item) is { } upfrontKnownItemSize)
         {
             return upfrontKnownItemSize;
@@ -1652,8 +1650,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     /// <returns>the assumed size of the item</returns>
     private Size GetAssumedItemSize(object? item)
     {
-        if (item is null) return _EmptySize;
-
         if (GetUpfrontKnownItemSize(item) is { } upfrontKnownItemSize)
         {
             return upfrontKnownItemSize;
@@ -2449,6 +2445,8 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     {
         Debug.Assert(ItemContainerGenerator is not null);
 
+        _scrollAnchorProvider?.UnregisterAnchorCandidate(element);
+
         var recycleKey = element.GetValue(_RecycleKeyProperty);
 
         if (recycleKey is null || recycleKey == s_itemIsItsOwnContainer)
@@ -2576,7 +2574,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
         double snapPoint = 0;
 
-        switch (Orientation)
+        switch (orientation)
         {
             case Orientation.Horizontal:
                 if (!AreHorizontalSnapPointsRegular)
