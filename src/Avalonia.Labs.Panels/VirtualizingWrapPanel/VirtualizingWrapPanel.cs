@@ -114,7 +114,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
     private readonly Action<Control, int, int> _updateElementIndex;
     private int _scrollToIndex = -1;
     private Control? _scrollToElement;
-    private bool _pendingScrollIntoView;
     private bool _isInLayout;
     private bool _isWaitingForViewportUpdate;
     private RealizedWrapElements? _measureElements;
@@ -518,11 +517,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
                         _scrollToElement.DesiredSize.Height);
                 _scrollToElement.Arrange(rect);
 
-                if (_pendingScrollIntoView)
-                {
-                    _pendingScrollIntoView = false;
-                    _scrollToElement.BringIntoView();
-                }
             }
 
             return finalSize;
@@ -754,18 +748,13 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
         double width = GetWidth(itemSize);
         double height = GetHeight(itemSize);
 
-        // Find extra width from stretching if applicable
         if (StretchItems)
         {
-            // Find start of row
             double y = GetY(start);
             int rowStartIndex = index;
             while (rowStartIndex > 0 && GetY(FindItemOffset(rowStartIndex - 1, wrappingWidth)).IsCloseTo(y))
-            {
                 rowStartIndex--;
-            }
 
-            // Find row info
             double rowSummedUpWidth = 0;
             int rowCount = 0;
             int k = rowStartIndex;
@@ -778,12 +767,8 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
             GetRowLayout(wrappingWidth, rowCount, rowSummedUpWidth, out var innerSpacing, out _, out var extraWidth);
             width += extraWidth;
-
-            // If it's not the last item in the row, add innerSpacing to ensure the spacing is also visible
             if (index < rowStartIndex + rowCount - 1)
-            {
                 width += innerSpacing;
-            }
         }
 
         return CreateRect(GetX(start), GetY(start), width, height);
@@ -799,37 +784,62 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
         var wrappingWidth = GetWrappingWidth();
 
+        if (TopLevel.GetTopLevel(this) is not { } root)
+            return null;
+
         var element = GetRealizedElement(index);
 
         if (element is not null)
         {
+            var rect = GetExpectedItemRect(index, wrappingWidth);
+
+            if (!_viewport.Contains(rect))
+            {
+                _isWaitingForViewportUpdate = true;
+                InvalidateMeasure();
+                root.UpdateLayout();
+                _isWaitingForViewportUpdate = false;
+            }
+
             element.BringIntoView();
             return element;
         }
-        else
+
+        var scrollToElement = GetOrCreateElement(items, index);
+        scrollToElement.Measure(Size.Infinity);
+
+        var expectedRect = GetExpectedItemRect(index, wrappingWidth);
+        scrollToElement.Arrange(expectedRect);
+
+        _scrollToElement = scrollToElement;
+        _scrollToIndex = index;
+
+        if (!Bounds.Contains(expectedRect) && !_viewport.Contains(expectedRect))
         {
-            if (_scrollToElement is not null)
-            {
-                RecycleElement(_scrollToElement, _scrollToIndex);
-            }
-
-            // Create and measure the element to be brought into view. Store it in a field so that
-            // it can be re-used in the layout pass.
-            var scrollToElement = GetOrCreateElement(items, index);
-            scrollToElement.Measure(Size.Infinity);
-
-            // Get the expected position of the element and put it in place.
-            var rect = GetExpectedItemRect(index, wrappingWidth);
-            scrollToElement.Arrange(rect);
-
-            // Store the element and index so that they can be used in the layout pass.
-            _scrollToElement = scrollToElement;
-            _scrollToIndex = index;
-            _pendingScrollIntoView = true;
             _isWaitingForViewportUpdate = true;
-            InvalidateMeasure();
-            return scrollToElement;
+            root.UpdateLayout();
+            _isWaitingForViewportUpdate = false;
         }
+
+        scrollToElement.BringIntoView();
+        _isWaitingForViewportUpdate = !_viewport.Contains(expectedRect);
+        root.UpdateLayout();
+
+        if (_isWaitingForViewportUpdate)
+        {
+            _isWaitingForViewportUpdate = false;
+            InvalidateMeasure();
+            root.UpdateLayout();
+        }
+
+        scrollToElement.BringIntoView();
+
+        if (_scrollToElement is not null)
+            RecycleElement(_scrollToElement, _scrollToIndex);
+
+        _scrollToElement = null;
+        _scrollToIndex = -1;
+        return scrollToElement;
     }
 
     private double GetWrappingWidth()
@@ -903,7 +913,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
                     }
                     else
                     {
-                        // Estimate remaining rows
                         var remainingRows = Math.Ceiling(remainingItems / itemsPerRow);
                         sizeU = lastRow.Y + lastRow.Height + (remainingRows * itemHeight);
                     }
@@ -1011,7 +1020,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             InvalidateArrange();
             // Defer ScrollIntoView until after the layout triggered above has completed.
             // Calling it synchronously here risks reentrancy because OnPropertyChanged
-            // fires before Measure/Arrange, and ScrollIntoView itself calls UpdateLayout.
+            // fires before Measure/Arrange.
             Dispatcher.UIThread.Post(() => ScrollIntoView(0), DispatcherPriority.Background);
         }
 
@@ -1424,7 +1433,6 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             {
                 _scrollToIndex = -1;
                 _scrollToElement = null;
-                _pendingScrollIntoView = false;
             }
 
             Size? upfrontKnownItemSize = GetUpfrontKnownItemSize(item);
