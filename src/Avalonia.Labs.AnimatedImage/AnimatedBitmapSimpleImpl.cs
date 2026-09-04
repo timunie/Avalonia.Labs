@@ -1,48 +1,42 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Avalonia.Media.Imaging;
 
 namespace Avalonia.Labs.AnimatedImage;
 
-internal class AnimatedBitmapSimpleImpl : IAnimatedBitmap
+internal class AnimatedBitmapSimpleImpl : AnimatedBitmapBase
 {
     public AnimatedBitmapSimpleImpl(IReadOnlyCollection<Bitmap> bitmaps, IReadOnlyCollection<int> delays)
+        : base(true)
     {
-        if (bitmaps is null)
-            throw new ArgumentNullException(nameof(bitmaps));
-        if (delays is null)
-            throw new ArgumentNullException(nameof(delays));
+        ArgumentNullException.ThrowIfNull(bitmaps);
+        ArgumentNullException.ThrowIfNull(delays);
         if (bitmaps.Count is var bitmapCount && delays.Count != bitmapCount)
             throw new ArgumentException($"{nameof(delays)} inconsistent count with {nameof(bitmaps)}");
-        if ((IReadOnlyList<Bitmap>) [..bitmaps] is not [var first, ..] bitmapsCopy)
-            throw new ArgumentException($"Invalid {nameof(delays)}.Count");
+        if ((IReadOnlyList<Bitmap>) [.. bitmaps] is not [var first, ..] bitmapsCopy)
+            throw new ArgumentException($"Invalid {nameof(bitmaps)}.Count");
         Size = first.Size;
         Frames = bitmapsCopy;
-        Delays = [..delays];
+        Delays = [.. delays];
         FrameCount = bitmapCount;
     }
 
-    public bool IsInitialized => true;
+    public override Size Size { get; }
 
-    public bool IsFailed => false;
+    public override int FrameCount { get; }
 
-    public bool IsCancellable { get; set; }
+    public override IReadOnlyList<Bitmap> Frames { get; }
 
-    public Size Size { get; } 
+    public override IReadOnlyList<int> Delays { get; }
 
-    public int FrameCount { get; }
-
-    [field: MaybeNull, AllowNull]
-    public IReadOnlyList<Bitmap> Frames { get; }
-
-    public IReadOnlyList<int> Delays { get; }
-
-    public event EventHandler? Initialized;
-    
-    public event EventHandler<AnimatedBitmapFailedEventArgs>? Failed;
-    
-    public void Init()
+    protected override void InitCore(CancellationToken cancellationToken)
     {
+    }
+
+    protected override void DisposeCore()
+    {
+        foreach (var bitmap in Frames)
+            bitmap.Dispose();
     }
 }

@@ -19,5 +19,9 @@
     <ProjectReference Include="..\..\src\Avalonia.Labs.Qr\Avalonia.Labs.Qr.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" />
+  </ItemGroup>
+
   <Import Project="..\..\build\XUnit.props" />
 </Project>
