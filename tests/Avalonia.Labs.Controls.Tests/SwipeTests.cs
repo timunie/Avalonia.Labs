@@ -7,6 +7,7 @@ using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
+using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Labs.Controls.Automation.Peers;
@@ -20,7 +21,7 @@ namespace Avalonia.Labs.Controls.Tests;
 
 public class SwipeTests
 {
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Initializes_With_Correct_Defaults()
     {
         var swipe = new Swipe();
@@ -34,7 +35,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Has_Default_Threshold_Of_100()
     {
         var swipe = new Swipe();
@@ -42,7 +43,7 @@ public class SwipeTests
         Assert.Equal(100.0, swipe.Threshold);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Has_Default_AnimationDuration_Of_200ms()
     {
         var swipe = new Swipe();
@@ -50,7 +51,7 @@ public class SwipeTests
         Assert.Equal(TimeSpan.FromMilliseconds(200), swipe.AnimationDuration);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Has_Default_SwipeModes_As_Reveal()
     {
         var swipe = new Swipe();
@@ -61,7 +62,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Reveal, swipe.BottomMode);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_ClipToBounds_Is_True()
     {
         var swipe = new Swipe();
@@ -69,7 +70,7 @@ public class SwipeTests
         Assert.True(swipe.ClipToBounds);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Is_Focusable()
     {
         var swipe = new Swipe();
@@ -77,7 +78,7 @@ public class SwipeTests
         Assert.True(swipe.Focusable);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Left_Template()
     {
         var swipe = new Swipe();
@@ -88,7 +89,7 @@ public class SwipeTests
         Assert.Equal(template, swipe.Left);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Right_Template()
     {
         var swipe = new Swipe();
@@ -99,7 +100,7 @@ public class SwipeTests
         Assert.Equal(template, swipe.Right);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Top_Template()
     {
         var swipe = new Swipe();
@@ -110,7 +111,7 @@ public class SwipeTests
         Assert.Equal(template, swipe.Top);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Bottom_Template()
     {
         var swipe = new Swipe();
@@ -121,7 +122,7 @@ public class SwipeTests
         Assert.Equal(template, swipe.Bottom);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Content()
     {
         var swipe = new Swipe();
@@ -132,7 +133,7 @@ public class SwipeTests
         Assert.Equal(content, swipe.Content);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Clear_Templates()
     {
         var swipe = new Swipe();
@@ -144,7 +145,7 @@ public class SwipeTests
         Assert.Null(swipe.Left);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_Threshold()
     {
         var swipe = new Swipe();
@@ -154,7 +155,7 @@ public class SwipeTests
         Assert.Equal(150.0, swipe.Threshold);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Threshold_Can_Be_Zero()
     {
         var swipe = new Swipe();
@@ -164,7 +165,7 @@ public class SwipeTests
         Assert.Equal(0, swipe.Threshold);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Threshold_Can_Be_Negative()
     {
         var swipe = new Swipe();
@@ -174,7 +175,7 @@ public class SwipeTests
         Assert.Equal(-50.0, swipe.Threshold);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_AnimationDuration()
     {
         var swipe = new Swipe();
@@ -184,7 +185,7 @@ public class SwipeTests
         Assert.Equal(TimeSpan.FromMilliseconds(500), swipe.AnimationDuration);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_AnimationDuration_Can_Be_Zero()
     {
         var swipe = new Swipe();
@@ -194,7 +195,7 @@ public class SwipeTests
         Assert.Equal(TimeSpan.Zero, swipe.AnimationDuration);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_LeftMode()
     {
         var swipe = new Swipe();
@@ -204,7 +205,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Execute, swipe.LeftMode);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_RightMode()
     {
         var swipe = new Swipe();
@@ -214,7 +215,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Execute, swipe.RightMode);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_TopMode()
     {
         var swipe = new Swipe();
@@ -224,7 +225,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Execute, swipe.TopMode);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Can_Set_BottomMode()
     {
         var swipe = new Swipe();
@@ -234,7 +235,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Execute, swipe.BottomMode);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeMode_Enum_Has_Correct_Values()
     {
         var values = Enum.GetValues<SwipeMode>();
@@ -244,7 +245,7 @@ public class SwipeTests
         Assert.Equal(2, values.Length);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Be_Set_To_LeftVisible()
     {
         var swipe = new Swipe();
@@ -254,7 +255,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Be_Set_To_RightVisible()
     {
         var swipe = new Swipe();
@@ -264,7 +265,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.RightVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Be_Set_To_TopVisible()
     {
         var swipe = new Swipe();
@@ -274,7 +275,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.TopVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Be_Set_To_BottomVisible()
     {
         var swipe = new Swipe();
@@ -284,7 +285,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.BottomVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Be_Set_To_Hidden()
     {
         var swipe = new Swipe();
@@ -295,7 +296,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Enum_Has_All_Expected_Values()
     {
         var values = Enum.GetValues<SwipeState>();
@@ -308,13 +309,13 @@ public class SwipeTests
         Assert.Equal(5, values.Length);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Hidden_Is_Default_Value()
     {
         Assert.Equal(0, (int)SwipeState.Hidden);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Transition_Through_All_States()
     {
         var swipe = new Swipe();
@@ -335,7 +336,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeState_Can_Switch_Directly_Between_Visible_States()
     {
         var swipe = new Swipe();
@@ -354,7 +355,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.BottomVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Multiple_SwipeState_Cycles_Work_Correctly()
     {
         var swipe = new Swipe();
@@ -384,7 +385,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Setting_SwipeState_To_Current_Value_Does_Not_Throw()
     {
         var swipe = new Swipe();
@@ -395,7 +396,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void LeftTemplateProperty_Is_StyledProperty()
     {
         var property = Swipe.LeftTemplateProperty;
@@ -404,7 +405,7 @@ public class SwipeTests
         Assert.Equal("Left", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void RightTemplateProperty_Is_StyledProperty()
     {
         var property = Swipe.RightTemplateProperty;
@@ -413,7 +414,7 @@ public class SwipeTests
         Assert.Equal("Right", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TopTemplateProperty_Is_StyledProperty()
     {
         var property = Swipe.TopTemplateProperty;
@@ -422,7 +423,7 @@ public class SwipeTests
         Assert.Equal("Top", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void BottomTemplateProperty_Is_StyledProperty()
     {
         var property = Swipe.BottomTemplateProperty;
@@ -431,7 +432,7 @@ public class SwipeTests
         Assert.Equal("Bottom", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ContentProperty_Is_StyledProperty()
     {
         var property = Swipe.ContentProperty;
@@ -440,7 +441,7 @@ public class SwipeTests
         Assert.Equal("Content", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeStateProperty_Is_StyledProperty()
     {
         var property = Swipe.SwipeStateProperty;
@@ -449,7 +450,7 @@ public class SwipeTests
         Assert.Equal("SwipeState", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ThresholdProperty_Is_StyledProperty()
     {
         var property = Swipe.ThresholdProperty;
@@ -458,7 +459,7 @@ public class SwipeTests
         Assert.Equal("Threshold", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AnimationDurationProperty_Is_StyledProperty()
     {
         var property = Swipe.AnimationDurationProperty;
@@ -467,7 +468,7 @@ public class SwipeTests
         Assert.Equal("AnimationDuration", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void LeftModeProperty_Is_StyledProperty()
     {
         var property = Swipe.LeftModeProperty;
@@ -476,7 +477,7 @@ public class SwipeTests
         Assert.Equal("LeftMode", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void RightModeProperty_Is_StyledProperty()
     {
         var property = Swipe.RightModeProperty;
@@ -485,7 +486,7 @@ public class SwipeTests
         Assert.Equal("RightMode", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TopModeProperty_Is_StyledProperty()
     {
         var property = Swipe.TopModeProperty;
@@ -494,7 +495,7 @@ public class SwipeTests
         Assert.Equal("TopMode", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void BottomModeProperty_Is_StyledProperty()
     {
         var property = Swipe.BottomModeProperty;
@@ -503,7 +504,7 @@ public class SwipeTests
         Assert.Equal("BottomMode", property.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenSwipeItem_Enum_Has_Correct_Values()
     {
         var values = Enum.GetValues<OpenSwipeItem>();
@@ -515,7 +516,7 @@ public class SwipeTests
         Assert.Equal(4, values.Length);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeDirection_Enum_Has_Correct_Values()
     {
         var values = Enum.GetValues<SwipeDirection>();
@@ -527,7 +528,7 @@ public class SwipeTests
         Assert.Equal(4, values.Length);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenRequestedEvent_Is_Routed_Event()
     {
         var eventInfo = Swipe.OpenRequestedEvent;
@@ -536,7 +537,7 @@ public class SwipeTests
         Assert.Equal("OpenRequested", eventInfo.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseRequestedEvent_Is_Routed_Event()
     {
         var eventInfo = Swipe.CloseRequestedEvent;
@@ -545,7 +546,7 @@ public class SwipeTests
         Assert.Equal("CloseRequested", eventInfo.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeStartedEvent_Is_Routed_Event()
     {
         var eventInfo = Swipe.SwipeStartedEvent;
@@ -554,7 +555,7 @@ public class SwipeTests
         Assert.Equal("SwipeStarted", eventInfo.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeEndedEvent_Is_Routed_Event()
     {
         var eventInfo = Swipe.SwipeEndedEvent;
@@ -563,7 +564,7 @@ public class SwipeTests
         Assert.Equal("SwipeEnded", eventInfo.Name);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenRequestedEvent_Is_Bubble_Routing()
     {
         var eventInfo = Swipe.OpenRequestedEvent;
@@ -572,7 +573,7 @@ public class SwipeTests
         Assert.Equal(RoutingStrategies.Bubble, eventInfo.RoutingStrategies);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseRequestedEvent_Is_Bubble_Routing()
     {
         var eventInfo = Swipe.CloseRequestedEvent;
@@ -581,7 +582,7 @@ public class SwipeTests
         Assert.Equal(RoutingStrategies.Bubble, eventInfo.RoutingStrategies);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeStartedEvent_Is_Bubble_Routing()
     {
         var eventInfo = Swipe.SwipeStartedEvent;
@@ -590,7 +591,7 @@ public class SwipeTests
         Assert.Equal(RoutingStrategies.Bubble, eventInfo.RoutingStrategies);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeEndedEvent_Is_Bubble_Routing()
     {
         var eventInfo = Swipe.SwipeEndedEvent;
@@ -599,7 +600,7 @@ public class SwipeTests
         Assert.Equal(RoutingStrategies.Bubble, eventInfo.RoutingStrategies);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenRequestedEventArgs_Has_Cancel_Property()
     {
         var args = new OpenRequestedEventArgs(Swipe.OpenRequestedEvent, OpenSwipeItem.LeftItems);
@@ -609,7 +610,7 @@ public class SwipeTests
         Assert.True(args.Cancel);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenRequestedEventArgs_Has_OpenSwipeItem_Property()
     {
         var args = new OpenRequestedEventArgs(Swipe.OpenRequestedEvent, OpenSwipeItem.RightItems);
@@ -617,7 +618,7 @@ public class SwipeTests
         Assert.Equal(OpenSwipeItem.RightItems, args.OpenSwipeItem);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OpenRequestedEventArgs_Preserves_All_OpenSwipeItem_Values()
     {
         var leftArgs = new OpenRequestedEventArgs(Swipe.OpenRequestedEvent, OpenSwipeItem.LeftItems);
@@ -631,7 +632,7 @@ public class SwipeTests
         Assert.Equal(OpenSwipeItem.BottomItems, bottomArgs.OpenSwipeItem);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseRequestedEventArgs_Has_Cancel_Property()
     {
         var args = new CloseRequestedEventArgs(Swipe.CloseRequestedEvent);
@@ -641,7 +642,7 @@ public class SwipeTests
         Assert.True(args.Cancel);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeStartedEventArgs_Has_SwipeDirection_Property()
     {
         var args = new SwipeStartedEventArgs(Swipe.SwipeStartedEvent, SwipeDirection.Left);
@@ -649,7 +650,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Left, args.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeStartedEventArgs_Preserves_All_SwipeDirection_Values()
     {
         var leftArgs = new SwipeStartedEventArgs(Swipe.SwipeStartedEvent, SwipeDirection.Left);
@@ -663,7 +664,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Down, downArgs.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeEndedEventArgs_Has_SwipeDirection_Property()
     {
         var args = new SwipeEndedEventArgs(Swipe.SwipeEndedEvent, SwipeDirection.Right, true);
@@ -671,7 +672,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Right, args.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeEndedEventArgs_Has_IsOpen_Property()
     {
         var argsOpen = new SwipeEndedEventArgs(Swipe.SwipeEndedEvent, SwipeDirection.Left, true);
@@ -681,7 +682,7 @@ public class SwipeTests
         Assert.False(argsClosed.IsOpen);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeEndedEventArgs_Preserves_All_SwipeDirection_Values()
     {
         var leftArgs = new SwipeEndedEventArgs(Swipe.SwipeEndedEvent, SwipeDirection.Left, true);
@@ -695,7 +696,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Down, downArgs.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_Has_SwipeDirection_Property()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Up, 50.0);
@@ -703,7 +704,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Up, args.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_Has_Offset_Property()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Down, 75.5);
@@ -711,7 +712,7 @@ public class SwipeTests
         Assert.Equal(75.5, args.Offset);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_SwipeDirection_Is_Mutable()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Left, 0);
@@ -721,7 +722,7 @@ public class SwipeTests
         Assert.Equal(SwipeDirection.Right, args.SwipeDirection);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_Offset_Is_Mutable()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Left, 50.0);
@@ -731,7 +732,7 @@ public class SwipeTests
         Assert.Equal(100.0, args.Offset);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_Offset_Can_Be_Negative()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Left, -50.0);
@@ -739,7 +740,7 @@ public class SwipeTests
         Assert.Equal(-50.0, args.Offset);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeChangingEventArgs_Offset_Can_Be_Zero()
     {
         var args = new SwipeChangingEventArgs(SwipeDirection.Right, 0);
@@ -747,7 +748,7 @@ public class SwipeTests
         Assert.Equal(0, args.Offset);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Inherits_DataContext()
     {
         var swipe = new Swipe();
@@ -758,7 +759,7 @@ public class SwipeTests
         Assert.Same(dataContext, swipe.DataContext);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_DataContext_Can_Be_Null()
     {
         var swipe = new Swipe();
@@ -769,7 +770,7 @@ public class SwipeTests
         Assert.Null(swipe.DataContext);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Has_Five_Children_After_Construction()
     {
         var swipe = new Swipe();
@@ -778,7 +779,7 @@ public class SwipeTests
         Assert.Equal(5, swipe.Children.Count);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Inherits_From_Grid()
     {
         var swipe = new Swipe();
@@ -786,7 +787,7 @@ public class SwipeTests
         Assert.IsAssignableFrom<Grid>(swipe);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Content_Can_Be_Changed_Multiple_Times()
     {
         var swipe = new Swipe();
@@ -803,7 +804,7 @@ public class SwipeTests
         Assert.Null(swipe.Content);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ThresholdProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.ThresholdProperty.GetDefaultValue(typeof(Swipe));
@@ -811,7 +812,7 @@ public class SwipeTests
         Assert.Equal(100.0, defaultValue);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AnimationDurationProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.AnimationDurationProperty.GetDefaultValue(typeof(Swipe));
@@ -819,7 +820,7 @@ public class SwipeTests
         Assert.Equal(TimeSpan.FromMilliseconds(200), defaultValue);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void LeftModeProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.LeftModeProperty.GetDefaultValue(typeof(Swipe));
@@ -827,7 +828,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Reveal, defaultValue);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void RightModeProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.RightModeProperty.GetDefaultValue(typeof(Swipe));
@@ -835,7 +836,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Reveal, defaultValue);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TopModeProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.TopModeProperty.GetDefaultValue(typeof(Swipe));
@@ -843,7 +844,7 @@ public class SwipeTests
         Assert.Equal(SwipeMode.Reveal, defaultValue);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void BottomModeProperty_Has_Correct_Default_Value()
     {
         var defaultValue = Swipe.BottomModeProperty.GetDefaultValue(typeof(Swipe));
@@ -852,7 +853,7 @@ public class SwipeTests
     }
 
 
-    [Fact]
+    [AvaloniaFact]
     public void Direct_child_element_syntax_in_XAML()
     {
         // If Dispatcher has a thread, invoke on it
@@ -882,7 +883,7 @@ public class SwipeTests
     }
 
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_False_Programmatic_Swiping_Continues_To_Work()
     {
         var swipe = new Swipe
@@ -907,7 +908,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_False_Keyboard_Gestures_Are_Disabled()
     {
         var swipe = new Swipe
@@ -959,7 +960,7 @@ public class SwipeTests
         Assert.Equal(0, openRequestedCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_False_Escape_Key_Is_Disabled()
     {
         var swipe = new Swipe
@@ -982,7 +983,7 @@ public class SwipeTests
         Assert.Equal(0, closeRequestedCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_True_Keyboard_Gestures_Are_Enabled()
     {
         var swipe = new Swipe
@@ -1045,7 +1046,7 @@ public class SwipeTests
         Assert.Equal(1, closeRequestedCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_False_SetSwipeState_Does_Nothing()
     {
         var swipe = new Swipe
@@ -1066,7 +1067,7 @@ public class SwipeTests
     }
 
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_False_Pan_Gestures_Are_Disabled()
     {
         var swipe = new Swipe
@@ -1098,7 +1099,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void When_IsSwipeEnabled_Is_True_Pan_Gestures_Are_Processed()
     {
         var swipe = new Swipe
@@ -1129,7 +1130,7 @@ public class SwipeTests
         Assert.True(swipeEnded);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureData))]
     public void Command_Is_Invoked_On_Swipe_Gesture_When_Mode_Is_Execute_And_Template_Is_Set(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1169,7 +1170,7 @@ public class SwipeTests
         Assert.Equal(expectedDirection, endedArgs.SwipeDirection);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureSimpleData))]
     public void Command_Is_Not_Invoked_When_CanExecute_Returns_False(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1190,7 +1191,7 @@ public class SwipeTests
         Assert.False(executed);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureSimpleData))]
     public void Command_Is_Not_Invoked_When_Mode_Is_Reveal(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1209,7 +1210,7 @@ public class SwipeTests
         Assert.False(executed);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureSimpleData))]
     public void Command_Is_Not_Invoked_When_Template_Is_Not_Set(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1227,7 +1228,7 @@ public class SwipeTests
         Assert.False(executed);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureSimpleData))]
     public void When_Command_Is_Null_And_Mode_Is_Execute_SwipeState_Returns_To_Hidden(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1243,7 +1244,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [MemberData(nameof(DirectionGestureSimpleData))]
     public void Commands_Are_Not_Invoked_When_IsSwipeEnabled_Is_False(
         Action<Swipe, IDataTemplate?, SwipeMode, ICommand?, object?> configure,
@@ -1398,7 +1399,7 @@ public class SwipeTests
         panUpdatedMethod.Invoke(swipe, [null, new PanUpdatedEventArgs(PanGestureStatus.Completed, deltaX, deltaY)]);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [InlineData(150.0, 0.0, OpenSwipeItem.LeftItems, SwipeState.LeftVisible)]
     [InlineData(-150.0, 0.0, OpenSwipeItem.RightItems, SwipeState.RightVisible)]
     [InlineData(0.0, 150.0, OpenSwipeItem.TopItems, SwipeState.TopVisible)]
@@ -1422,7 +1423,7 @@ public class SwipeTests
         Assert.Equal(expectedState, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void PanGesture_OpenRequested_Cancel_Prevents_Opening()
     {
         var swipe = new Swipe();
@@ -1442,7 +1443,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void PanGesture_Raises_CloseRequested_Event()
     {
         var swipe = new Swipe
@@ -1462,7 +1463,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void PanGesture_CloseRequested_Cancel_Prevents_Closing()
     {
         var swipe = new Swipe
@@ -1486,7 +1487,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
     }
 
-    [Theory]
+    [AvaloniaTheory]
     [InlineData(OpenSwipeItem.LeftItems, SwipeState.LeftVisible)]
     [InlineData(OpenSwipeItem.RightItems, SwipeState.RightVisible)]
     [InlineData(OpenSwipeItem.TopItems, SwipeState.TopVisible)]
@@ -1504,7 +1505,7 @@ public class SwipeTests
         Assert.Equal(expectedState, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Programmatic_Open_Method_Can_Be_Cancelled()
     {
         var swipe = new Swipe();
@@ -1515,7 +1516,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Programmatic_Close_Method_Raises_CloseRequested()
     {
         var swipe = new Swipe
@@ -1532,7 +1533,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.Hidden, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Programmatic_Close_Method_Can_Be_Cancelled()
     {
         var swipe = new Swipe
@@ -1547,7 +1548,7 @@ public class SwipeTests
         Assert.Equal(SwipeState.LeftVisible, swipe.SwipeState);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Programmatic_SwipeState_Direct_Assignment_Raises_OpenRequested_And_CloseRequested()
     {
         var swipe = new Swipe();
@@ -1564,7 +1565,7 @@ public class SwipeTests
         Assert.Equal(1, closeCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Programmatic_SwipeState_Direct_Assignment_Cancel_Reverts_State()
     {
         var swipe = new Swipe();
@@ -1594,7 +1595,7 @@ public class SwipeTests
         public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_Creates_SwipeAutomationPeer()
     {
         var swipe = new Swipe();
@@ -1604,7 +1605,7 @@ public class SwipeTests
         Assert.IsType<SwipeAutomationPeer>(peer);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeAutomationPeer_Properties_And_Provider_Work_Correctly()
     {
         var swipe = new Swipe();
@@ -1618,7 +1619,7 @@ public class SwipeTests
         Assert.Empty(peer.GetSelection());
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeAutomationPeer_GetProvider_Returns_SelectionProvider()
     {
         var swipe = new Swipe();
@@ -1629,7 +1630,7 @@ public class SwipeTests
         Assert.Same(peer, provider);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeAutomationPeer_Selection_Works_Correctly()
     {
         var swipe = new Swipe
@@ -1665,7 +1666,7 @@ public class SwipeTests
         Assert.Single(peer.GetSelection());
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwipeAutomationPeer_GetChildren_Includes_Configured_Items()
     {
         var swipe = new Swipe
@@ -1694,7 +1695,7 @@ public class SwipeTests
         return recognizer.Direction;
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void PanGestureRecognizer_Defaults_To_All_Directions()
     {
         var recognizer = new PanGestureRecognizer();
@@ -1705,7 +1706,7 @@ public class SwipeTests
         Assert.Equal(5, recognizer.Threshold);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_PanGestureRecognizer_Directions_Are_Dynamic_Based_On_Configured_Templates()
     {
         var swipe = new Swipe();
@@ -1738,7 +1739,7 @@ public class SwipeTests
             GetPanDirection(swipe));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_PanGestureRecognizer_Directions_Are_Dynamic_Based_On_SwipeState()
     {
         var swipe = new Swipe
@@ -1777,7 +1778,7 @@ public class SwipeTests
             GetPanDirection(swipe));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Swipe_PanGestureRecognizer_Disabled_When_IsSwipeEnabled_Is_False()
     {
         var swipe = new Swipe
