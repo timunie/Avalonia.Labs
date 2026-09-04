@@ -1846,7 +1846,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
                 endItemBottom = lastRow.Y + lastRow.Height;
             }
 
-            double cacheMargin = CacheRows > 0 ? GetHeight(GetAverageItemSize()) : 0;
+            double cacheMargin = Math.Max(0, CacheRows) * GetHeight(GetAverageItemSize());
             bool withinCached = _realizedElements != null &&
                                 _startItemIndex >= 0 && _endItemIndex >= 0 &&
                                 newViewportStartY >= _startItemOffsetY + cacheMargin &&
