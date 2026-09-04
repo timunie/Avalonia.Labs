@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Labs.Controls.Utils;
 
@@ -222,7 +223,6 @@ namespace Avalonia.Labs.Controls
 
             // Get the removal start and end index within the realized _elements collection.
             var first = _firstIndex;
-            var last = first + elementCount - 1;
             var startIndex = index - first;
             var endIndex = (index + count) - first;
 
@@ -266,7 +266,7 @@ namespace Avalonia.Labs.Controls
                 // If the remove started before and ended within our realized elements, then our new
                 // first index will be the index where the remove started. Mark StartU as unstable
                 // because we can't rely on it now to estimate element heights.
-                if (startIndex <= 0 && end < last)
+                if (startIndex <= 0 && end < elementCount)
                 {
                     _firstIndex = first = index;
                 }

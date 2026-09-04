@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Labs.Catalog.Views;
 using Avalonia.Labs.Catalog.Views.SamplePageBase;

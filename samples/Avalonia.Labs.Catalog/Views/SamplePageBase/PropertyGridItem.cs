@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls.Templates;
+﻿using Avalonia;
+using Avalonia.Controls.Templates;
 
 namespace Avalonia.Labs.Catalog.Views.SamplePageBase;
 

@@ -7,12 +7,13 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Labs.Controls;
+using Avalonia.Labs.Controls.Tests;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Xunit;
 using Avalonia.Themes.Fluent;
 
-[assembly: AvaloniaTestApplication(typeof(Avalonia.Labs.Controls.Tests.VirtualizingWrapPanelTests))]
+[assembly: AvaloniaTestApplication(typeof(TestApp))]
 
 namespace Avalonia.Labs.Controls.Tests;
 
