@@ -92,6 +92,35 @@ public class VirtualizingWrapPanelTests
     }
 
     [AvaloniaFact]
+    public void Final_Incomplete_Grid_Row_Aligns_With_The_Grid_Columns()
+    {
+        var target = new TestVirtualizingWrapPanel
+        {
+            ItemSize = new Size(30, 20),
+            SpacingMode = SpacingMode.Uniform,
+        };
+        var itemsControl = new ItemsControl
+        {
+            Width = 100,
+            Height = 100,
+            ItemsPanel = new FuncTemplate<Panel?>(() => target),
+            ItemsSource = Enumerable.Range(0, 4).ToList(),
+        };
+        var window = new Window { Content = itemsControl };
+
+        window.Show();
+        window.UpdateLayout();
+
+        var firstItem = target.ContainerFromIndex(0);
+        var finalItem = target.ContainerFromIndex(3);
+        Assert.NotNull(firstItem);
+        Assert.NotNull(finalItem);
+
+        // Three cells fit in a row. The final item occupies the first grid column.
+        Assert.Equal(firstItem.Bounds.X, finalItem.Bounds.X);
+    }
+
+    [AvaloniaFact]
     public void Regular_SnapPoints_Use_The_Requested_Orientation()
     {
         var target = new TestVirtualizingWrapPanel

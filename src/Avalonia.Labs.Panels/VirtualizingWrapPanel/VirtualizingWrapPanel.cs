@@ -1673,14 +1673,14 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
         extraWidthPerItem = 0;
         double effectiveSummedUpWidth = summedUpChildWidth;
 
-        if (StretchItems && actualChildCount > 0)
+        if (actualChildCount > 0)
         {
-            if (AllowDifferentSizedItems)
+            if (AllowDifferentSizedItems && StretchItems)
             {
                 extraWidthPerItem = (rowWidth - summedUpChildWidth) / actualChildCount;
                 effectiveSummedUpWidth = rowWidth;
             }
-            else
+            else if (!AllowDifferentSizedItems)
             {
                 var averageSize = GetAverageItemSize();
                 var childWidth = GetWidth(averageSize);
@@ -1688,11 +1688,20 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
                     (int)Math.Max(1, Math.Floor((rowWidth + EPSILON) / childWidth)) :
                     actualChildCount;
 
-                double stretchedChildWidth = rowWidth / itemsPerRow;
-                // Note: We don't have access to children's MaxWidth here easily, 
-                // but ArrangeRow handles it if needed. For estimation we use full stretch.
-                extraWidthPerItem = stretchedChildWidth - childWidth;
-                effectiveSummedUpWidth = itemsPerRow * stretchedChildWidth;
+                if (StretchItems)
+                {
+                    double stretchedChildWidth = rowWidth / itemsPerRow;
+                    // Note: We don't have access to children's MaxWidth here easily,
+                    // but ArrangeRow handles it if needed. For estimation we use full stretch.
+                    extraWidthPerItem = stretchedChildWidth - childWidth;
+                    effectiveSummedUpWidth = itemsPerRow * stretchedChildWidth;
+                }
+                else if (IsGridLayoutEnabled)
+                {
+                    // Grid layout reserves a complete set of column tracks even for its final,
+                    // incomplete row, so items align with the columns above.
+                    effectiveSummedUpWidth = itemsPerRow * childWidth;
+                }
             }
         }
 
@@ -1718,7 +1727,8 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             var itemWidth = GetWidth(averageItemSize);
             if (itemWidth > 0)
             {
-                spacingChildCount = (int)Math.Max(1, Math.Floor((rowWidth + EPSILON) / itemWidth));
+                var itemsPerRow = (int)Math.Max(1, Math.Floor((rowWidth + EPSILON) / itemWidth));
+                spacingChildCount = itemsPerRow;
             }
         }
 
