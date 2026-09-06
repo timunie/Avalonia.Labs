@@ -16,7 +16,7 @@ using Avalonia.VisualTree;
 namespace Avalonia.Labs.Controls;
 
 /// <summary>
-/// A implementation of a wrap panel that supports virtualization and can be used in horizontal and vertical orientation.
+/// An implementation of a wrap panel that supports virtualization and can be used in horizontal and vertical orientation.
 /// </summary>
 public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, IItemSizeProvider
 {
