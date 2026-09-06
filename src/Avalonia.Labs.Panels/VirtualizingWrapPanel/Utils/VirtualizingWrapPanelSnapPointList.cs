@@ -18,8 +18,6 @@ namespace Avalonia.Labs.Controls.Utils;
         private readonly int _start = -1;
         private readonly int _end;
 
-        private readonly IItemSizeProvider? _itemSizeProvider;
-
         public VirtualizingWrapPanelSnapPointList(RealizedWrapElements realizedElements, int count, Orientation orientation, Orientation parentOrientation, SnapPointsAlignment snapPointsAlignment, double size, IItemSizeProvider? itemSizeProvider)
         {
             _realizedElements = realizedElements;
@@ -27,7 +25,6 @@ namespace Avalonia.Labs.Controls.Utils;
             _parentOrientation = parentOrientation;
             _snapPointsAlignment = snapPointsAlignment;
             _size = size;
-            _itemSizeProvider = itemSizeProvider;
             if (parentOrientation == orientation)
             {
                 _start = Math.Max(0, _realizedElements.FirstIndex - ExtraCount);

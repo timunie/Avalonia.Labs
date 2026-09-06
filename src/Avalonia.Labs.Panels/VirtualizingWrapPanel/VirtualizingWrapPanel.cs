@@ -78,7 +78,7 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
         AvaloniaProperty.Register<VirtualizingWrapPanel, IItemSizeProvider?>(nameof(ItemSizeProvider));
 
     /// <summary>
-    /// /// Defines the <see cref="SpacingMode"/> property.
+    /// Defines the <see cref="SpacingMode"/> property.
     /// </summary>
     public static readonly StyledProperty<SpacingMode> SpacingModeProperty =
         AvaloniaProperty.Register<VirtualizingWrapPanel, SpacingMode>(nameof(SpacingMode), SpacingMode.Uniform);
@@ -833,13 +833,15 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
         }
 
         scrollToElement.BringIntoView();
+        
+        var realizedElement = GetRealizedElement(index);
 
         if (_scrollToElement is not null)
             RecycleElement(_scrollToElement, _scrollToIndex);
 
         _scrollToElement = null;
         _scrollToIndex = -1;
-        return scrollToElement;
+        return realizedElement;
     }
 
     private double GetWrappingWidth()

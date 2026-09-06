@@ -1,4 +1,6 @@
-﻿namespace Avalonia.Labs.Controls;
+﻿using Avalonia;
+
+namespace Avalonia.Labs.Controls;
 
 /// <summary>
 /// Provides the size of items displayed in an VirtualizingPanel.
