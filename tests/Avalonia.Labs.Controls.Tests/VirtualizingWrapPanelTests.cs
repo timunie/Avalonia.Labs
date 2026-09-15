@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Labs.Controls;
 using Avalonia.Labs.Controls.Tests;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Xunit;
 using Avalonia.Themes.Fluent;
@@ -66,6 +67,81 @@ public class VirtualizingWrapPanelTests
         // 100x100 viewport, 50x50 items -> 2x2 = 4 items should be realized
         Assert.Equal(0, target.FirstRealizedIndex);
         Assert.True(target.LastRealizedIndex >= 3);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StretchItems_WhenSingleColumnShrinks_ShouldTrimTextInStackPanels(bool allowDifferentSizedItems)
+    {
+        var target = new TestVirtualizingWrapPanel
+        {
+            StretchItems = true,
+            AllowDifferentSizedItems = allowDifferentSizedItems
+        };
+        var items = Enumerable.Range(0, 2).Select(_ => new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                },
+                new TextBlock
+                {
+                    Text = "Lorem ipsum dolor sit amet.",
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                }
+            }
+        }).ToArray();
+        var itemsControl = new ItemsControl
+        {
+            ItemsPanel = new FuncTemplate<Panel?>(() => target),
+            ItemsSource = items
+        };
+        var window = new Window { Content = itemsControl, Width = 1600, Height = 300 };
+
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+
+            var naturalWidth = items[0].DesiredSize.Width;
+            Assert.True(naturalWidth > 0);
+            Assert.Equal(target.ContainerFromIndex(0)!.Bounds.Y, target.ContainerFromIndex(1)!.Bounds.Y);
+
+            // First collapse to a single column while the text still fits.
+            itemsControl.Width = Math.Ceiling(naturalWidth + 20);
+            window.UpdateLayout();
+            Assert.True(target.ContainerFromIndex(1)!.Bounds.Y > target.ContainerFromIndex(0)!.Bounds.Y);
+            Assert.All(items, item =>
+                Assert.False(((TextBlock)item.Children[0]).TextLayout.TextLines[0].HasCollapsed));
+
+            // Keep shrinking that column below the natural width of its content.
+            itemsControl.Width = Math.Floor(naturalWidth / 2);
+            window.UpdateLayout();
+
+            Assert.All(items, item =>
+            {
+                var text = (TextBlock)item.Children[0];
+                Assert.True(text.TextLayout.TextLines[0].HasCollapsed,
+                    $"Expected ellipsis after shrinking to {target.Bounds.Width}, but text width is {text.Bounds.Width}.");
+                Assert.True(text.Bounds.Width <= target.Bounds.Width);
+            });
+
+            // Growing again must restore the two-column layout and untrimmed text.
+            itemsControl.Width = 1600;
+            window.UpdateLayout();
+            Assert.Equal(target.ContainerFromIndex(0)!.Bounds.Y, target.ContainerFromIndex(1)!.Bounds.Y);
+            Assert.All(items, item =>
+                Assert.False(((TextBlock)item.Children[0]).TextLayout.TextLines[0].HasCollapsed));
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
