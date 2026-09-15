@@ -1646,13 +1646,18 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
 
         double x = -GetX(_viewport.TopLeft) + outerSpacing;
 
+        // Remeasure stretched children at their allocated size so nested panels can shrink
+        // their content. Keep the cached natural sizes for wrapping and subsequent resizes.
         if (AllowDifferentSizedItems)
         {
             for (int i = 0; i < childCount; i++)
             {
                 var child = children[i];
                 Size childSize = childSizes[i];
-                child.Arrange(CreateRect(x, y, GetWidth(childSize) + extraWidth, rowHeight));
+                var rect = CreateRect(x, y, GetWidth(childSize) + extraWidth, rowHeight);
+                if (StretchItems)
+                    child.Measure(rect.Size);
+                child.Arrange(rect);
                 x += GetWidth(childSize) + extraWidth + innerSpacing;
             }
         }
@@ -1663,7 +1668,10 @@ public class VirtualizingWrapPanel : VirtualizingPanel, IScrollSnapPointsInfo, I
             for (int i = 0; i < childCount; i++)
             {
                 var child = children[i];
-                child.Arrange(CreateRect(x, y, arrangedWidth, rowHeight));
+                var rect = CreateRect(x, y, arrangedWidth, rowHeight);
+                if (StretchItems)
+                    child.Measure(rect.Size);
+                child.Arrange(rect);
                 x += arrangedWidth + innerSpacing;
             }
         }
